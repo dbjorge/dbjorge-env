@@ -19,3 +19,7 @@ $env:DEPOT_TOOLS_WIN_TOOLCHAIN = 0
 New-Alias -Force -Name 'subl' -Value 'C:\Program Files\Sublime Text 3\subl.exe'
 New-Alias -Force -Name 'code' -Value 'C:\Program Files (x86)\Microsoft VS Code\Code.exe'
 New-Alias -Force -Name 'which' -Value 'Get-Command'
+
+foreach ($ModuleDirectory in (Get-ChildItem $EnvPSModuleDirectory)) {
+    Import-Module -Force -Name $ModuleDirectory.Name
+}
