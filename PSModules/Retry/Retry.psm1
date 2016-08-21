@@ -30,13 +30,20 @@ $CutoffFunctions = @{
     'SimilarExecutionTime' = $function:CutoffAtSimilarExecutionTime
 }
 
-function RecordExecution($ScriptBlock) {
+function RecordExecution {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars", "global:LASTEXITCODE")]
+    Param([ScriptBlock]$ScriptBlock)
+    
     $Exception = $null
     $Output = $null
+    $ExitCode = $null
     $StartTime = Get-Date
     try {
+        $global:LASTEXITCODE = 0
         $Output = & $ScriptBlock
-        $Succeeded = $?
+        $ExitCode = $global:LASTEXITCODE
+
+        $Succeeded = ($ExitCode -eq 0)
     } catch {
         $Succeeded = $false
         $Exception = $_ 
@@ -46,6 +53,7 @@ function RecordExecution($ScriptBlock) {
     return New-Object PSObject -Property @{
         'Output' = $Output
         'Succeeded' = $Succeeded
+        'ExitCode' = $ExitCode
         'Exception' = $Exception
         'StartTime' = $StartTime
         'EndTime' = $EndTime
