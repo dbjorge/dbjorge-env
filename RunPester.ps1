@@ -19,10 +19,12 @@ function FormatResult ($result){
 		if ($null -eq $_ -or $null -eq $_.StackTrace) { return }
 
 		$lineNumber = GetLineNumber $_.StackTrace
-		$file = GetFileName $_.StackTrace | Resolve-Path -Relative
+		$relativeFile = GetFileName $_.StackTrace
+		if ($null -eq $relativeFile) { return }
+		$absoluteFile = $relativeFile | Resolve-Path -Relative
 		$collapsedMessage = $_.FailureMessage -replace "`n"," "
 		$testDescription = "$($_.Describe):$($_.Name)"
-		"$file;$lineNumber;${testDescription}:$collapsedMessage"
+		"$absoluteFile;$lineNumber;${testDescription}:$collapsedMessage"
 	}
 }
 Write-Output "Running tests..."
