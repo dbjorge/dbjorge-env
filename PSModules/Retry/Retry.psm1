@@ -95,7 +95,7 @@ function Invoke-WithRetry {
         $BackoffStrategy = 'None',
 
         [Parameter(Mandatory=$false,
-                   Position=1)]
+                   Position=2)]
         [ValidateSet('None', 'SimilarExecutionTime', 'SameOutput')]
         [string]
         $CutoffStrategy = 'SameOutput'

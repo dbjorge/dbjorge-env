@@ -137,6 +137,6 @@ Describe 'Invoke-WithRetry' {
                 (New-Object PSObject -Property @{Output = 1}))
         }
 
-        Invoke-WithRetry -ScriptBlock { } | Should Be 2
+        Invoke-WithRetry { } | Should Be 2
     }
 }
