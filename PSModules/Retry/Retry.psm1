@@ -7,13 +7,15 @@ function CutoffAtSimilarExecutionTime($ExecutionHistory) {
 
     if ($ExecutionHistory.Count -lt 2) { return $false }
     
-    $DurationRatio = `
-        ($ExecutionHistory[0].DurationMs + $AdditiveThresholdMs) / `
-        ($ExecutionHistory[1].DurationMs + $AdditiveThresholdMs)
+    $RecentMs = $ExecutionHistory[0].DurationMs
+    $PreviousMs = $ExecutionHistory[1].DurationMs
+
+    $DurationRatio = ($RecentMs + 1) / ($PreviousMs + 1)
     
     return `
-        ($DurationRatio -lt (1 + $MultiplicativeThreshold)) -and `
-        ($DurationRatio -gt (1 - $MultiplicativeThreshold))
+        ([Math]::Abs($RecentMs - $PreviousMs) -lt $AdditiveThresholdMs) -or
+        (($DurationRatio -lt (1 + $MultiplicativeThreshold)) -and `
+         ($DurationRatio -gt (1 - $MultiplicativeThreshold)))
 }
 
 function CutoffAtSameOutput($ExecutionHistory) {
@@ -32,29 +34,18 @@ $CutoffFunctions = @{
     'SimilarExecutionTime' = $function:CutoffAtSimilarExecutionTime
 }
 
-function RecordExecution {
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars", "global:LASTEXITCODE")]
-    Param([ScriptBlock]$ScriptBlock)
+function CreateExecutionRecord {
+    Param(
+        $Output,
+        $ExitCode,
+        $Exception,
+        $StartTime,
+        $EndTime
+    )
 
-    $Exception = $null
-    $Output = $null
-    $ExitCode = $null
-    $StartTime = Get-Date
-    try {
-        $global:LASTEXITCODE = 0
-        $Output = & $ScriptBlock
-        $ExitCode = $global:LASTEXITCODE
-
-        $Succeeded = ($ExitCode -eq 0)
-    } catch {
-        $Succeeded = $false
-        $Exception = $_ 
-    }
-    $EndTime = Get-Date
-
-    return New-Object PSObject -Property @{
+    New-Object PSObject -Property @{
         'Output' = $Output
-        'Succeeded' = $Succeeded
+        'Succeeded' = ($null -eq $Exception) -and (0 -eq $ExitCode)
         'ExitCode' = $ExitCode
         'Exception' = $Exception
         'StartTime' = $StartTime
@@ -64,18 +55,43 @@ function RecordExecution {
     }
 }
 
-function RecordExecutionWithRetry(
-    $ScriptBlock,
-    $CutoffFunction,
-    $BackoffFunction
-) {
-    $ExecutionHistory = @()
+function RecordExecution {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars", "global:LASTEXITCODE")]
+    Param(
+        [ScriptBlock]$ScriptBlock,
+        [ref]$ExecutionRecord
+    )
+
+    $Exception = $null
+    $Output = $null
+    $ExitCode = $null
+    $StartTime = Get-Date
+    try {
+        $global:LASTEXITCODE = 0
+        & $ScriptBlock | Tee-Object -Variable 'Output'
+        $ExitCode = $global:LASTEXITCODE
+    } catch {
+        $Exception = $_ 
+    }
+    $EndTime = Get-Date
+
+    $ExecutionRecord.Value = CreateExecutionRecord $Output $ExitCode $Exception $StartTime $EndTime
+}
+
+function RecordExecutionWithRetry {
+    Param (
+        [ScriptBlock]$ScriptBlock,
+        $CutoffFunction,
+        $BackoffFunction,
+        [ref]$ExecutionHistory
+    )
+    $ExecutionHistory.Value = @()
 
     do {
-        $ExecutionHistory = @(RecordExecution $ScriptBlock) + $ExecutionHistory
-    } while (-not $ExecutionHistory[0].Succeeded -and -not (& $CutoffFunction $ExecutionHistory))
-
-    return $ExecutionHistory
+        $ExecutionRecord = $null
+        RecordExecution $ScriptBlock ([ref]$ExecutionRecord)
+        $ExecutionHistory.Value = ,($ExecutionRecord) + $ExecutionHistory.Value
+    } while (-not $ExecutionHistory.Value[0].Succeeded -and -not (& $CutoffFunction $ExecutionHistory.Value))
 }
 
 function Invoke-WithRetry {
@@ -98,14 +114,28 @@ function Invoke-WithRetry {
                    Position=2)]
         [ValidateSet('None', 'SimilarExecutionTime', 'SameOutput')]
         [string]
-        $CutoffStrategy = 'SameOutput'
+        $CutoffStrategy = 'SameOutput',
+
+        [Parameter(Mandatory=$false,
+                   Position=3)]
+        [ValidateSet('All', 'Last')]
+        [string]
+        $Output = 'All'
     )
     $CutoffFunction = $CutoffFunctions[$CutoffStrategy]
     $BackoffFunction = $BackoffFunctions[$BackoffStrategy]
+    $TeeOutput = ($Output -eq 'All')
 
-    $ExecutionHistory = RecordExecutionWithRetry -ScriptBlock $ScriptBlock -CutoffFunction $CutoffFunction -BackoffFunction $BackoffFunction
-
-    return $ExecutionHistory[0].Output
+    $ExecutionHistory = $null
+    if ($TeeOutput) {
+        RecordExecutionWithRetry -ScriptBlock $ScriptBlock -CutoffFunction $CutoffFunction -BackoffFunction $BackoffFunction -ExecutionHistory ([ref]$ExecutionHistory)
+    } else {
+        RecordExecutionWithRetry -ScriptBlock $ScriptBlock -CutoffFunction $CutoffFunction -BackoffFunction $BackoffFunction -ExecutionHistory ([ref]$ExecutionHistory) | Out-Null
+    }
+    
+    if ($Output -eq 'Last') {
+        $ExecutionHistory[0].Output
+    }
 }
 
 Export-ModuleMember -Function @(
