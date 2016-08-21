@@ -1,0 +1,33 @@
+{
+    "version": "0.1.0",
+
+    // Start PowerShell
+    "command": "${env.windir}\\sysnative\\windowspowershell\\v1.0\\PowerShell.exe",
+
+    // The command is a shell script
+    "isShellCommand": true,
+    // Show the output window always
+    "showOutput": "always",
+    // Allow Pester to invoke scripts and run Pester
+    "args": [
+        "-NoProfile",
+        "-ExecutionPolicy", "RemoteSigned",
+        "-Command", "${workspaceRoot}\\RunPester.ps1"
+    ],
+    // Associate with test task runner
+    "tasks": [
+        {
+            "taskName": "Test",
+            "isTestCommand": true,
+            "problemMatcher": {
+                "owner": "pester",
+                "pattern": {
+                    "regexp": "(.*);(.*);(.*)",
+                    "file": 1,
+                    "line": 2,
+                    "message": 3
+                }
+            }
+        }
+    ]
+}
