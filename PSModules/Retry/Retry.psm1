@@ -2,17 +2,18 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 function CutoffAtSimilarExecutionTime($ExecutionHistory) {
-    $Threshold = .15
+    $MultiplicativeThreshold = .1
+    $AdditiveThresholdMs = 50
 
     if ($ExecutionHistory.Count -lt 2) { return $false }
     
-    $LastDuration = $ExecutionHistory[0].EndTime - $ExecutionHistory[0].StartTime
-    $NextToLastDuration = $ExecutionHistory[1].EndTime - $ExecutionHistory[1].StartTime
-    $DurationRatio = $LastDuration.TotalMilliseconds / $NextToLastDuration.TotalMilliseconds
+    $DurationRatio = `
+        ($ExecutionHistory[0].DurationMs + $AdditiveThresholdMs) / `
+        ($ExecutionHistory[1].DurationMs + $AdditiveThresholdMs)
     
     return `
-        ($DurationRatio -lt (1 + $Threshold)) -and `
-        ($DurationRatio -gt (1 - $Threshold))
+        ($DurationRatio -lt (1 + $MultiplicativeThreshold)) -and `
+        ($DurationRatio -gt (1 - $MultiplicativeThreshold))
 }
 
 function CutoffAtSameOutput($ExecutionHistory) {
@@ -27,13 +28,14 @@ $BackoffFunctions = @{
 
 $CutoffFunctions = @{
     'None' = { $false }
+    'SameOutput' = $function:CutoffAtSameOutput
     'SimilarExecutionTime' = $function:CutoffAtSimilarExecutionTime
 }
 
 function RecordExecution {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars", "global:LASTEXITCODE")]
     Param([ScriptBlock]$ScriptBlock)
-    
+
     $Exception = $null
     $Output = $null
     $ExitCode = $null

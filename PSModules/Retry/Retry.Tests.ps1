@@ -68,6 +68,35 @@ Describe "CutoffAtSameOutput" {
     }
 }
 
+Describe "CutoffAtSimilarExecutionTime" {
+    InModuleScope Retry {
+        It 'should not cut off after 1 try' {
+            CutoffAtSimilarExecutionTime @(RecordExecution {27}) | Should Be $false
+        }
+
+        It 'should cut off after 2 similarly timed short tasks' {
+            CutoffAtSimilarExecutionTime @(
+                (RecordExecution { }),
+                (RecordExecution { })
+            ) | Should Be $true
+        }
+
+        It 'should cut off after 2 similarly timed long tasks' {
+            CutoffAtSimilarExecutionTime @(
+                (RecordExecution { Start-Sleep -Milliseconds 200 }),
+                (RecordExecution { Start-Sleep -Milliseconds 200 })
+            ) | Should Be $true
+        }
+
+        It 'should not cut off after 2 differently timed tasks' {
+            CutoffAtSimilarExecutionTime @(
+                (RecordExecution { Start-Sleep -Milliseconds 200 }),
+                (RecordExecution { })
+            ) | Should Be $false
+        }
+    }
+}
+
 Describe "RecordExecutionWithRetry" {
     InModuleScope Retry {
         It 'should only execute a successful ScriptBlock once' {
