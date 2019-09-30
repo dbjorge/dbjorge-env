@@ -20,10 +20,10 @@
 	bb = for-each-ref --sort=-committerdate refs/heads --format='%(HEAD)%(color:yellow)%(refname:short)|%(color:bold green)%(committerdate:relative)|%(color:blue)%(subject)|%(color:magenta)%(authorname)%(color:reset)'
 	f = fetch -p
 	c = commit
-	cam = !"git add * && git commit -m"
+	cam = !"git add -A && git commit -m"
 	camend = commit --amend --reuse-message=HEAD
 	unstage = reset --
-	lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+	lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit -n 10
 	pub = "!git push --set-upstream dbjorge #"
 	nub = "!git checkout -b $1 #"
 	clonefork = "!git clone -o upstream https://github.com/$1/$2.git && cd $2 && git remote add dbjorge https://github.com/dbjorge/$2.git #"
