@@ -77,7 +77,7 @@ function Write-PromptEx {
         ## Check if the last command took a long time
         $lastCommandElapsedTime = $historyItem.EndExecutionTime - $historyItem.StartExecutionTime
 
-        if ($lastCommandElapsedTime.TotalSeconds -gt 3)
+        if ($lastCommandElapsedTime.TotalSeconds -gt 3 -or $LASTEXITCODE -ne 0)
         {
             $lastCommandDurationString = `
                 if ($lastCommandElapsedTime.TotalHours -gt 1) {
@@ -88,7 +88,7 @@ function Write-PromptEx {
                     ("{0} seconds" -f $lastCommandElapsedTime.TotalSeconds)
                 }
 
-            Write-Host "$($LastCommandDurationColor)Command took $lastCommandDurationString.$($ResetColor)"
+            Write-Host "$($LastCommandDurationColor)Exit code $LASTEXITCODE. Command took $lastCommandDurationString.$($ResetColor)"
         }
 
         # if it took longer than 20 seconds, beep to let the user know it's done
