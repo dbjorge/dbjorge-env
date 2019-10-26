@@ -30,9 +30,16 @@ function Get-GitBranchInfo
     }
     $originUrl = $script:CachedGitOriginUrlsByFolder[$folder]
 
+    if (Test-Path "$folder\HEAD") {
+        $branch = ((Get-Content -Force "$folder\HEAD") -replace '^ref: refs\/heads\/','');
+    } else {
+        # probably a submodule case
+        $branch = git rev-parse --abbrev-ref HEAD
+    }
+
     return New-Object PSObject -Property @{
         Folder = $folder;
-        Branch = ((Get-Content -Force "$folder\HEAD") -replace '^ref: refs\/heads\/','');
+        Branch = $branch;
         OriginUrl = $originUrl;
         IsLargeGvfsRepo = ($originUrl -match '/_git/os$');
     }
