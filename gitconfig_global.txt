@@ -2,13 +2,14 @@
     name = Dan Bjorge
     email = dan@dbjorge.net
 [core]
-    safecrlf = true
     preloadindex = true
     fscache = true
-    autocrlf = false
-    editor = code --wait
     eol = lf
+    autocrlf = input # Always converts crlf to lf on commit
+    safecrlf = true # Fail fast on EOL inconsistencies
+    editor = code --wait
 [diff]
+    ignoreSubmodules = dirty
     tool = vscode
 [difftool "vscode"]
     cmd = code --wait --diff $LOCAL $REMOTE
