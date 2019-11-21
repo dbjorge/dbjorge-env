@@ -9,14 +9,14 @@
 #   => Shows the time & date
 #   => Understands how to break long prompt text across multiple lines
 
-$LocationColor = "`e[97m"
-$PoshGitBracketColor = "`e[93m"
-$BranchColor = "`e[96m"
-$HistoryIdColor = "`e[93m"
-$TimeStampColor = "`e[32m"
-$LastCommandDurationColor = "`e[93m"
+$LocationColor = "$([char]27)[97m"
+$PoshGitBracketColor = "$([char]27)[93m"
+$BranchColor = "$([char]27)[96m"
+$HistoryIdColor = "$([char]27)[93m"
+$TimeStampColor = "$([char]27)[32m"
+$LastCommandDurationColor = "$([char]27)[93m"
 
-$ResetColor = "`e[m"
+$ResetColor = "$([char]27)[m"
 
 # This is more performant than the usual git rev-parse technique in GVFS branches
 $script:CachedGitOriginUrlsByFolder = @{}
