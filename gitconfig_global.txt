@@ -28,6 +28,7 @@
     clonefork = "!git clone -o upstream https://github.com/$1/$2.git && cd $2 && git remote add dbjorge https://github.com/dbjorge/$2.git && :"
     co = checkout
     f = fetch -p
+    fa = fetch -p --all
     lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit -n 10
     nub = "!git checkout -b $1 && :"
     pub = "!git push --set-upstream dbjorge HEAD && :"
