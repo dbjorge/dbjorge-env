@@ -38,6 +38,24 @@ if ($global:IsWindows) {
     New-Alias vs 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\devenv.exe'
 }
 
+if ($global:IsLinux) {
+    if (Test-Path '~/.cargo/bin') {
+        Register-PathElement -PathEnvironmentVariable 'PATH' '~/.cargo/bin'
+    }
+
+    if (Test-Path '~/.nvm/nvm.sh') {
+        function global:nvm { bash -c "source ~/.nvm/nvm.sh && nvm $args" }
+
+        $nodeCurrent = nvm which current
+        $nodeDirCurrent = Split-Path $nodeCurrent
+        Register-PathElement -PathEnvironmentVariable 'PATH' $nodeDirCurrent
+    }
+}
+
+if (Test-Command 'exa') {
+    New-Alias -Force -Name 'ls' -Value 'exa'
+}
+
 function global:cdr { cd $ReposDirectory }
 function global:cdasc { cd (Join-Path $ReposDirectory 'axe-sarif-converter') }
 function global:cdaxe { cd (Join-Path $ReposDirectory 'axe-core') }
