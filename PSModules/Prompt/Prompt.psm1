@@ -128,7 +128,11 @@ function Write-PromptEx {
     Write-Host " | $($HistoryIdColor)$($id)$($ResetColor) | $($TimeStampColor)$($TimeStamp)$($ResetColor)"
     Write-Host ">" -NoNewline
 
-    $host.UI.RawUI.WindowTitle = "$env:_BuildWTitle $(Get-Location)"
+    $windowTitle = $location
+    if ($env:_BuildWTitle) {
+        $windowTitle = $env:_BuildWTitle + ' ' + $windowTitle
+    }
+    $host.UI.RawUI.WindowTitle = $windowTitle
 
     " " # Must be returned to prevent default behavior showing through
 }
