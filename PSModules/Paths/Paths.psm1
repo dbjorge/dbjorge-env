@@ -5,7 +5,7 @@ function PathStringWith ($OriginalPathString, $Term) {
     if ($OriginalPathString.Split(";") -contains $Term) {
         $OriginalPathString
     } else {
-        $OriginalPathString + ";$Term"
+        $OriginalPathString + [IO.Path]::PathSeparator + "$Term"
     }
 }
 

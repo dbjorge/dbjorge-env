@@ -2,7 +2,7 @@ function EnsureFileStartsWithLine($LiteralPath, $Line) {
     if (Test-Path -LiteralPath $LiteralPath) {
         $Lines = @(Get-Content -LiteralPath $LiteralPath)
     } else {
-        mkdir (Split-Path $LiteralPath) -ErrorAction SilentlyContinue
+        New-Item -Type Directory -Path (Split-Path $LiteralPath) -ErrorAction SilentlyContinue
         $Lines = @()
     }
 

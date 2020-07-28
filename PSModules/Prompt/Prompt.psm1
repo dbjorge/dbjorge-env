@@ -113,14 +113,16 @@ function Write-PromptEx {
 
     $TimeStamp = "{0:HH:mm:ss} {0:MM/dd}" -f ([DateTime]::Now)
 
-    $location = Get-Location
+    $location = (Get-Location).Path
+    $location = [Regex]::Replace($location, '^' + [Regex]::Escape($global:HOME), '~')
+
     $branchInfo = Get-GitBranchInfo
     $windowWidth = $host.UI.RawUI.WindowSize.Width
     $bufferCharsToAllowFor = ' [ ≡12 +12 ~12 -12 !] | 123 | 12:34:56 78/90'.Length
-    $use2Lines = (($location.Path.Length + $branchInfo.Branch.Length + $bufferCharsToAllowFor) -gt $windowWidth)
+    $use2Lines = (($location.Length + $branchInfo.Branch.Length + $bufferCharsToAllowFor) -gt $windowWidth)
 
     Write-Host ""
-    Write-Host "$($LocationColor)$(Get-Location)$($ResetColor)" -NoNewline
+    Write-Host "$($LocationColor)$($location)$($ResetColor)" -NoNewline
     if ($use2Lines) { Write-Host "`n   " -NoNewline }
     Write-GvfsCapableGitStatus $branchInfo
     Write-Host " | $($HistoryIdColor)$($id)$($ResetColor) | $($TimeStampColor)$($TimeStamp)$($ResetColor)"
