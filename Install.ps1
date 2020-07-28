@@ -17,3 +17,8 @@ EnsureFileStartsWithLine $global:profile ". $ProfileImpl"
 
 $GitConfigImpl = (Join-Path $PSScriptRoot 'gitconfig_global.txt') -replace '\\','/';
 EnsureFileStartsWithLine '~/.gitconfig' "[include] path = $GitConfigImpl";
+
+if ($env:WSL_INTEROP -ne $null) {
+    $GitConfigWslImpl = (Join-Path $PSScriptRoot 'gitconfig_global_wsl.txt') -replace '\\','/';
+    EnsureFileStartsWithLine '~/.gitconfig' "[include] path = $GitConfigWslImpl";
+}
