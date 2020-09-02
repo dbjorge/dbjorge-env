@@ -33,9 +33,9 @@ if ($global:IsWindows) {
 
     New-Alias -Force -Name 'which' -Value 'Get-Command'
 
-    New-Alias vs2017 'C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\IDE\devenv.exe'
-    New-Alias vs2019 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\devenv.exe'
-    New-Alias vs 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\devenv.exe'
+    New-Alias -Force vs2017 'C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\IDE\devenv.exe'
+    New-Alias -Force vs2019 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\devenv.exe'
+    New-Alias -Force vs 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\devenv.exe'
 }
 
 if ($global:IsLinux) {
@@ -57,6 +57,7 @@ if (Test-Command 'exa') {
 }
 
 function global:cdr { cd $ReposDirectory }
+function global:cdas { cd (Join-Path $ReposDirectory 'accessibility-insights-for-android-service')}
 function global:cdasc { cd (Join-Path $ReposDirectory 'axe-sarif-converter') }
 function global:cdaxe { cd (Join-Path $ReposDirectory 'axe-core') }
 function global:cdenv { cd (Join-Path $ReposDirectory 'dbjorge-env') }
