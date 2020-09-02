@@ -74,6 +74,16 @@ function Write-GvfsCapableGitStatus($BranchInfo) {
     }
 }
 
+function CrossPlatformBeep([int]$Frequency = 500, [int]$DurationMs = 200) {
+    if ($IsWindows) {
+        [Console]::Beep($frequency, $duration)
+    } elseif($null -ne $env:WSL_INTEROP) {
+        powershell.exe -NoLogo -NoProfile -Command "[Console]::Beep($Frequency, $DurationMs)"
+    } else {
+        [Console]::Beep()
+    }
+}
+
 $script:LastHistoryItemProcessed = 0
 function Write-PromptEx {
     $historyItem = Get-History -Count 1
@@ -100,7 +110,7 @@ function Write-PromptEx {
 
         # if it took longer than 20 seconds, beep to let the user know it's done
         if ($lastCommandElapsedTime.TotalSeconds -gt 20) {
-            [Console]::Beep(500,200)
+            CrossPlatformBeep -Frequency 500 -DurationMs 200
         }
 
         $script:LastHistoryItemProcessed = $historyItem.Id
