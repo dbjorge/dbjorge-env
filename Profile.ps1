@@ -36,6 +36,9 @@ if ($global:IsWindows) {
     New-Alias -Force vs2017 'C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\IDE\devenv.exe'
     New-Alias -Force vs2019 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\devenv.exe'
     New-Alias -Force vs 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\devenv.exe'
+
+    $env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jre"
+    $env:ANDROID_SDK_HOME = "$env:LOCALAPPDATA\Android\Sdk"
 }
 
 if ($global:IsLinux) {
