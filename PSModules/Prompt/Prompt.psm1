@@ -12,6 +12,7 @@
 $script:ErrorActionPreference = 'Stop';
 Set-StrictMode -Version Latest;
 
+$AdminColor = "$([char]27)[31m";
 $PlatformColor = "$([char]27)[93m"
 $LocationColor = "$([char]27)[97m"
 $PoshGitBracketColor = "$([char]27)[93m"
@@ -131,6 +132,13 @@ function ProcessLastCommandHistory() {
     return $id
 }
 
+function IsWindowsAdmin() {
+    if (-not $global:IsWindows) { return $false }
+    $Identity = [System.Security.Principal.WindowsIdentity]::GetCurrent();
+    $AdminGroup = "S-1-5-32-544";
+    return [bool]($Identity.groups -match $AdminGroup)
+}
+
 function Write-PromptEx {
     try {
         $HistoryId = ProcessLastCommandHistory
@@ -150,6 +158,9 @@ function Write-PromptEx {
         $use2Lines = ($predictedLineLength -gt $windowWidth)
 
         Write-Host ""
+        if (IsWindowsAdmin) {
+            Write-Host "$($AdminColor)ADMIN$($ResetColor) | " -NoNewline
+        }
         if ($null -ne $env:WSL_INTEROP) {
             Write-Host "$($PlatformColor)WSL$($ResetColor) | " -NoNewline
         }
