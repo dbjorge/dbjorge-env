@@ -81,7 +81,7 @@ function Write-GvfsCapableGitStatus($BranchInfo) {
 
 function CrossPlatformBeep([int]$Frequency = 500, [int]$DurationMs = 200) {
     if ($global:IsWindows) {
-        [Console]::Beep($frequency, $duration)
+        [Console]::Beep($Frequency, $DurationMs)
     } elseif($null -ne $env:WSL_INTEROP) {
         powershell.exe -NoLogo -NoProfile -Command "[Console]::Beep($Frequency, $DurationMs)"
     } else {
