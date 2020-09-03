@@ -12,6 +12,7 @@
 $script:ErrorActionPreference = 'Stop';
 Set-StrictMode -Version Latest;
 
+$PlatformColor = "$([char]27)[93m"
 $LocationColor = "$([char]27)[97m"
 $PoshGitBracketColor = "$([char]27)[93m"
 $BranchColor = "$([char]27)[96m"
@@ -78,7 +79,7 @@ function Write-GvfsCapableGitStatus($BranchInfo) {
 }
 
 function CrossPlatformBeep([int]$Frequency = 500, [int]$DurationMs = 200) {
-    if ($IsWindows) {
+    if ($global:IsWindows) {
         [Console]::Beep($frequency, $duration)
     } elseif($null -ne $env:WSL_INTEROP) {
         powershell.exe -NoLogo -NoProfile -Command "[Console]::Beep($Frequency, $DurationMs)"
@@ -141,10 +142,17 @@ function Write-PromptEx {
 
         $branchInfo = Get-GitBranchInfo
         $windowWidth = $host.UI.RawUI.WindowSize.Width
-        $bufferCharsToAllowFor = ' [ ≡12 +12 ~12 -12 !] | 123 | 12:34:56 78/90'.Length
-        $use2Lines = (($location.Length + $branchInfo.Branch.Length + $bufferCharsToAllowFor) -gt $windowWidth)
+
+        $predictedLineLength = ($location.Length + ' 123 | 12:34:56 78/90'.Length);
+        if ($null -ne $branchInfo) {
+            $predictedLineLength += $branchInfo.Branch.Length + ' [ ≡12 +12 ~12 -12 !] |'.Length;
+        }
+        $use2Lines = ($predictedLineLength -gt $windowWidth)
 
         Write-Host ""
+        if ($null -ne $env:WSL_INTEROP) {
+            Write-Host "$($PlatformColor)WSL$($ResetColor) | " -NoNewline
+        }
         Write-Host "$($LocationColor)$($location)$($ResetColor)" -NoNewline
         if ($use2Lines) { Write-Host "`n   " -NoNewline }
         Write-GvfsCapableGitStatus $branchInfo
@@ -156,7 +164,8 @@ function Write-PromptEx {
         }
         $host.UI.RawUI.WindowTitle = $windowTitle
     } catch {
-        Write-Host "$($ErrorColor)Write-PromptEx error: $($_)$($ResetColor)";
+        $global:WritePromptExError = $_;
+        Write-Host "$($ErrorColor)`$global:WritePromptExError: $($_)$($ResetColor)";
     }
 
     Write-Host ">" -NoNewline
