@@ -9,13 +9,16 @@
 #   => Shows the time & date
 #   => Understands how to break long prompt text across multiple lines
 
+$script:ErrorActionPreference = 'Stop';
+Set-StrictMode -Version Latest;
+
 $LocationColor = "$([char]27)[97m"
 $PoshGitBracketColor = "$([char]27)[93m"
 $BranchColor = "$([char]27)[96m"
 $HistoryIdColor = "$([char]27)[93m"
 $TimeStampColor = "$([char]27)[32m"
 $LastCommandDurationColor = "$([char]27)[93m"
-
+$ErrorColor = "$([char]27)[31m$([char]27)[47m"
 $ResetColor = "$([char]27)[m"
 
 # This is more performant than the usual git rev-parse technique in GVFS branches
@@ -84,8 +87,11 @@ function CrossPlatformBeep([int]$Frequency = 500, [int]$DurationMs = 200) {
     }
 }
 
+# Tracks the ID of the last command for Get-History purposes
+# Write-Hosts any "interesting" information about the last command
+# (eg, non-zero exit code, long duration)
 $script:LastHistoryItemProcessed = 0
-function Write-PromptEx {
+function ProcessLastCommandHistory() {
     $historyItem = Get-History -Count 1
     $id = 1
 
@@ -121,29 +127,39 @@ function Write-PromptEx {
         $id = $historyItem.Id + 1
     }
 
-    $TimeStamp = "{0:HH:mm:ss} {0:MM/dd}" -f ([DateTime]::Now)
+    return $id
+}
 
-    $location = (Get-Location).Path
-    $location = [Regex]::Replace($location, '^' + [Regex]::Escape($global:HOME), '~')
+function Write-PromptEx {
+    try {
+        $HistoryId = ProcessLastCommandHistory
 
-    $branchInfo = Get-GitBranchInfo
-    $windowWidth = $host.UI.RawUI.WindowSize.Width
-    $bufferCharsToAllowFor = ' [ ≡12 +12 ~12 -12 !] | 123 | 12:34:56 78/90'.Length
-    $use2Lines = (($location.Length + $branchInfo.Branch.Length + $bufferCharsToAllowFor) -gt $windowWidth)
+        $TimeStamp = "{0:HH:mm:ss} {0:MM/dd}" -f ([DateTime]::Now)
 
-    Write-Host ""
-    Write-Host "$($LocationColor)$($location)$($ResetColor)" -NoNewline
-    if ($use2Lines) { Write-Host "`n   " -NoNewline }
-    Write-GvfsCapableGitStatus $branchInfo
-    Write-Host " | $($HistoryIdColor)$($id)$($ResetColor) | $($TimeStampColor)$($TimeStamp)$($ResetColor)"
-    Write-Host ">" -NoNewline
+        $location = (Get-Location).Path
+        $location = [Regex]::Replace($location, '^' + [Regex]::Escape($global:HOME), '~')
 
-    $windowTitle = $location
-    if ($env:_BuildWTitle) {
-        $windowTitle = $env:_BuildWTitle + ' ' + $windowTitle
+        $branchInfo = Get-GitBranchInfo
+        $windowWidth = $host.UI.RawUI.WindowSize.Width
+        $bufferCharsToAllowFor = ' [ ≡12 +12 ~12 -12 !] | 123 | 12:34:56 78/90'.Length
+        $use2Lines = (($location.Length + $branchInfo.Branch.Length + $bufferCharsToAllowFor) -gt $windowWidth)
+
+        Write-Host ""
+        Write-Host "$($LocationColor)$($location)$($ResetColor)" -NoNewline
+        if ($use2Lines) { Write-Host "`n   " -NoNewline }
+        Write-GvfsCapableGitStatus $branchInfo
+        Write-Host " | $($HistoryIdColor)$($HistoryId)$($ResetColor) | $($TimeStampColor)$($TimeStamp)$($ResetColor)"
+
+        $windowTitle = $location
+        if ($env:_BuildWTitle) {
+            $windowTitle = $env:_BuildWTitle + ' ' + $windowTitle
+        }
+        $host.UI.RawUI.WindowTitle = $windowTitle
+    } catch {
+        Write-Host "$($ErrorColor)Write-PromptEx error: $($_)$($ResetColor)";
     }
-    $host.UI.RawUI.WindowTitle = $windowTitle
 
+    Write-Host ">" -NoNewline
     " " # Must be returned to prevent default behavior showing through
 }
 
