@@ -6,6 +6,7 @@ if ($PSVersionTable.PSVersion -lt $MinimumVersion) {
     Write-Warning "PowerShell version $($PSVersionTable.PSVersion) < minimum required version $MinimumVersion, update at https://github.com/PowerShell/PowerShell/releases"
 }
 
+Import-Module PSReadLine # PS sometimes disables this if it thinks we're using a screen reader
 Import-Module posh-git
 
 $EnvDirectory = $PSScriptRoot
@@ -60,7 +61,7 @@ if (Test-Command 'exa') {
 }
 
 function global:cdr { cd $ReposDirectory }
-function global:cdas { cd (Join-Path $ReposDirectory 'accessibility-insights-for-android-service')}
+function global:cdas { cd (Join-Path $ReposDirectory 'accessibility-insights-for-android-service') }
 function global:cdasc { cd (Join-Path $ReposDirectory 'axe-sarif-converter') }
 function global:cdaxe { cd (Join-Path $ReposDirectory 'axe-core') }
 function global:cdenv { cd (Join-Path $ReposDirectory 'dbjorge-env') }
