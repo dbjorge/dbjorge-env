@@ -19,7 +19,7 @@
     cmd = code --wait $MERGED
 [alias]
     # List branches sorted by last-modified
-    b = "!git for-each-ref --sort='-authordate' --color=auto --format='%(color:bold cyan)%(align:width=20)%(authordate:human)%(end)%(color:reset)%09%(color:bold magenta)%(objectname:short)%(color:reset) %(color: bold green)%(HEAD)%(color:reset)%(align:width=9,position=right)%(upstream:remotename)%(end):%(color:bold white)%(refname:lstrip=2)%(color:reset)' refs/heads"
+    b = "!git for-each-ref --sort='authordate' --color=auto --format='%(color:bold cyan)%(align:width=20)%(authordate:human)%(end)%(color:reset)%09%(color:bold magenta)%(objectname:short)%(color:reset) %(color: bold green)%(HEAD)%(color:reset)%(align:width=9,position=right)%(upstream:remotename)%(end):%(color:bold white)%(refname:lstrip=2)%(color:reset)' refs/heads"
     c = commit
     cam = !"git add -A && git commit -m"
     camend = commit --amend --reuse-message=HEAD
