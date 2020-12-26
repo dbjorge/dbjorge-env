@@ -8,6 +8,8 @@
     autocrlf = input # Always converts crlf to lf on commit
     safecrlf = true # Fail fast on EOL inconsistencies
     editor = code --wait
+[init]
+    defaultBranch = main
 [diff]
     ignoreSubmodules = dirty
     tool = vscode
