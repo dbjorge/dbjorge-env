@@ -1,47 +1,84 @@
-// I use PowerShell's AzureAD module to generate this list:
-// Get-AzureADGroupMembersRecursive -SearchString '<our team alias>' | % { $_.DisplayName.Split(' ')[0] } | sort
-const people = [
-    // regenerate this before running!
-]
+const fs = require('fs');
+const path = require('path');
 
-// returns an array of weekly pairings, where each week is represented
-// as an array of pairIds. eg, getPairings(['a', 'b', 'c', 'd']) might return
-// [
-//    ['a/b', 'c/d'],
-//    ['a/c', 'b/d'],
-//    ['a/d', 'b/c'],
-// ]
-function getPairings(people) {
-    const pairId = (person1, person2) => `${person1}/${person2}`;
-
-    if (people.length % 2 == 1) {
-        people = [...people, '<noone>']
-    } 
-    people = people.sort();
-    
-    const usedPairIds = new Set();
-    const allWeeksPairings = {};
-    for (let week = 1; week < people.length; week += 1) {
-        const peopleStillToPair = [...people];
-        const thisWeeksPairings = [];
-        while (peopleStillToPair.length > 0) {
-            const person1 = peopleStillToPair.splice(0, 1)[0];
-            for (let person2index = 0; person2index < peopleStillToPair.length; person2index += 1) {
-                const candidatePair = pairId(person1, peopleStillToPair[person2index],);
-                if (!usedPairIds.has(candidatePair)) {
-                    usedPairIds.add(candidatePair);
-                    thisWeeksPairings.push(candidatePair);
-                    peopleStillToPair.splice(person2index, 1)
-                    break;
-                }
-            }
-        }
-        allWeeksPairings[`Week ${week}`] = thisWeeksPairings;
-    }
-
-    return allWeeksPairings;
+function readConfigSync() {
+    const rawContent = fs.readFileSync(path.join(__dirname, 'coffee-pairings.config.jsonc'));
+    return JSON.parse(rawContent.toString());
 }
 
-const pairings = getPairings(people);
-const formattedPairings = JSON.stringify(pairings, null, 2);
-console.log(formattedPairings);
+function writeConfigSync(config) {
+    fs.writeFileSync('./coffee-pairings.config.jsonc', JSON.stringify(config, null, 4));
+}
+
+function getUsedPairsFromHistory(config) {
+    return new Set(config.history.flatMap(historyEntry => historyEntry.pairing));
+}
+
+function appendPairingToHistory(config, newPairing) {
+    config.history.push({
+        timestamp: new Date().toISOString(),
+        pairing: newPairing,
+    });
+    writeConfigSync(config);
+}
+
+function deleteOldestPairingFromHistory(config) {
+    const oldestTimestamp = config.history[0].timestamp;
+    config.history.shift();
+    writeConfigSync(config);
+    return oldestTimestamp;
+}
+
+function shuffleInPlace(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+function makePairId(person1, person2) {
+    return `${person1}/${person2}`;
+}
+
+function makeInOrderPairing(people) {
+    const pairing = [];
+    for (let i = 0; i < people.length; i += 2) {
+        pairing.push(makePairId(people[i], people[i+1]));
+    }
+    return pairing;
+}
+
+function main() {
+    const config = readConfigSync();
+    let people = config.people;
+    if (people.length % 2 == 1) {
+        people = [...people, '<noone>']
+    }
+
+    let attemptsSinceDeletingOldestPairing = 0;
+    do {
+        const usedPairs = getUsedPairsFromHistory(config);
+        shuffleInPlace(people);
+        const candidatePairing = makeInOrderPairing(people);
+        const reusesSomePair = candidatePairing.some(pair => usedPairs.has(pair));
+        
+        if (!reusesSomePair) {
+            appendPairingToHistory(config, candidatePairing);
+            console.log('Suggested pairing:');
+            for (const pair of candidatePairing) {
+                console.log(pair);
+            }
+            break;
+        }
+
+        attemptsSinceDeletingOldestPairing++;
+        if (attemptsSinceDeletingOldestPairing > 100) {
+            const deletedTimestamp = deleteOldestPairingFromHistory(config);
+            console.log(`Could not find a non-repeating pairing; purging old pairing from ${deletedTimestamp}`);
+            attemptsSinceDeletingOldestPairing = 0;
+        }
+    } while(true);
+}
+
+main();

@@ -1,0 +1,23 @@
+{
+    // I use PowerShell's Az module to generate this list from an Azure AD group:
+    //   1. Install it from https://docs.microsoft.com/en-us/powershell/azure/install-az-ps
+    //   2. From pwsh, run:
+    //     Connect-AzAccount
+    //     Get-AzADGroup -DisplayName 'Accessibility Insights Coffee Chats' | Get-AzADGroupMember | % { "`"$($_.UserPrincipalName.Split('@')[0])`"," }
+    "people": [
+        "Alice",
+        "Bob",
+        "Charles"
+    ],
+    // coffee-pairings will update this automatically, you shouldn't have to touch it yourself.
+    // The format will look like the below.
+    "history": [
+        {
+            "timestamp": "2021-01-26T01:08:18.548Z",
+            "pairing": [
+                "Alice/Bob",
+                "Charles/<noone>"
+            ]
+        }
+    ]
+}
