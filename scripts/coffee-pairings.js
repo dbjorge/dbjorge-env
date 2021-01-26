@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { stringify } = require('querystring');
 
 function readConfigSync() {
     const rawContent = fs.readFileSync(path.join(__dirname, 'coffee-pairings.config.jsonc'));
@@ -38,7 +39,7 @@ function shuffleInPlace(array) {
 }
 
 function makePairId(person1, person2) {
-    return `${person1}/${person2}`;
+    return person1 <= person2 ? `${person1}/${person2}` : `${person2}/${person1}`;
 }
 
 function makeInOrderPairing(people) {
@@ -64,8 +65,9 @@ function main() {
         const reusesSomePair = candidatePairing.some(pair => usedPairs.has(pair));
         
         if (!reusesSomePair) {
+            candidatePairing.sort();
             appendPairingToHistory(config, candidatePairing);
-            console.log('Suggested pairing:');
+            console.log('== Suggested pairing ==');
             for (const pair of candidatePairing) {
                 console.log(pair);
             }
@@ -73,7 +75,7 @@ function main() {
         }
 
         attemptsSinceDeletingOldestPairing++;
-        if (attemptsSinceDeletingOldestPairing > 100) {
+        if (attemptsSinceDeletingOldestPairing > 1000) {
             const deletedTimestamp = deleteOldestPairingFromHistory(config);
             console.log(`Could not find a non-repeating pairing; purging old pairing from ${deletedTimestamp}`);
             attemptsSinceDeletingOldestPairing = 0;
