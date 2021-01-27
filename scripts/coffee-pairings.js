@@ -42,6 +42,11 @@ function makePairId(person1, person2) {
     return person1 <= person2 ? `${person1}/${person2}` : `${person2}/${person1}`;
 }
 
+function randomizePairIdOrder(pairId) {
+    [person1, person2] = pairId.split('/');
+    return Math.random() < .5 ? `${person1}/${person2}` : `${person2}/${person1}`
+}
+
 function makeInOrderPairing(people) {
     const pairing = [];
     for (let i = 0; i < people.length; i += 2) {
@@ -69,7 +74,7 @@ function main() {
             appendPairingToHistory(config, candidatePairing);
             console.log('== Suggested pairing ==');
             for (const pair of candidatePairing) {
-                console.log(pair);
+                console.log(randomizePairIdOrder(pair));
             }
             break;
         }
