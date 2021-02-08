@@ -72,10 +72,29 @@ function main() {
         if (!reusesSomePair) {
             candidatePairing.sort();
             appendPairingToHistory(config, candidatePairing);
-            console.log('== Suggested pairing ==');
-            for (const pair of candidatePairing) {
-                console.log(randomizePairIdOrder(pair));
-            }
+            const listFormattedPairing = candidatePairing
+                .map(pair => '  - ' + randomizePairIdOrder(pair))
+                .join("\n");
+
+            const formattedDate = new Intl.DateTimeFormat('en').format(new Date());
+            const suggestedSubject = `Accessibility Insights Coffee Chat pairs (week of ${formattedDate})`;
+            const suggestedMessage = `
+Hi all!
+
+This week's suggested coffee pairs are:
+
+${listFormattedPairing}
+
+If you are the *first* name listed in a pair, please create your pair's meeting sometime this week.
+
+Thanks!
+-Dan
+            `;
+
+            console.log('=== SUGGESTED SUBJECT ===');
+            console.log(suggestedSubject);
+            console.log('=== SUGGESTED MESSAGE ===');
+            console.log(suggestedMessage);
             break;
         }
 
