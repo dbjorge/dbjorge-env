@@ -34,5 +34,7 @@
     lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit -n 10
     nub = "!git checkout -b $1 && :"
     pub = "!git push --set-upstream dbjorge HEAD && :"
+    # eg, "git renamed-upstream master main"
+    renamed-upstream = "!git branch -m $1 $2 && git fetch upstream && git branch -u upstream/$2 $2 && :"
     s = status -sb
     unstage = reset --
