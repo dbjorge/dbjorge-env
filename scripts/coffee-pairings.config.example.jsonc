@@ -16,7 +16,7 @@
             "timestamp": "2021-01-26T01:08:18.548Z",
             "pairing": [
                 "Alice/Bob",
-                "Charles/<noone>"
+                "Charles/<wildcard>"
             ]
         }
     ]
