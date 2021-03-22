@@ -73,10 +73,8 @@ function orderPairs(pairing, config) {
         const aScheduledPreviously = previousSchedulers.includes(a);
         const bScheduledPreviously = previousSchedulers.includes(b);
         if (aScheduledPreviously && !bScheduledPreviously) {
-            console.log(`forcing pair order ${b}/${a}`);
             return `${b}/${a}`;
         } else if(bScheduledPreviously && !aScheduledPreviously) {
-            console.log(`forcing pair order ${a}/${b}`);
             return `${a}/${b}`;
         } else {
             return Math.random() < .5 ? `${a}/${b}` : `${b}/${a}`

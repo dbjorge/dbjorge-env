@@ -3,6 +3,9 @@
     //   1. Install it from https://docs.microsoft.com/en-us/powershell/azure/install-az-ps
     //   2. From pwsh, run:
     //     Connect-AzAccount
+    //     # by first name
+    //     Get-AzADGroup -DisplayName 'Accessibility Insights Coffee Chats' | Get-AzADGroupMember | % { "`"$($_.DisplayName.Split(' ')[0])`"," } | sort
+    //     # by alias
     //     Get-AzADGroup -DisplayName 'Accessibility Insights Coffee Chats' | Get-AzADGroupMember | % { "`"$($_.UserPrincipalName.Split('@')[0])`"," }
     "people": [
         "Alice",
