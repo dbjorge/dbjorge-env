@@ -1,6 +1,3 @@
-[user]
-    name = Dan Bjorge
-    email = dan@dbjorge.net
 [core]
     preloadindex = true
     fscache = true

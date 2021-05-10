@@ -1,3 +1,8 @@
+Param(
+    [ValidateSet('work', 'personal')]
+    [string] $GitProfile
+)
+
 function EnsureFileStartsWithLine($LiteralPath, $Line) {
     if (Test-Path -LiteralPath $LiteralPath) {
         $Lines = @(Get-Content -LiteralPath $LiteralPath)
@@ -18,7 +23,10 @@ EnsureFileStartsWithLine $global:profile ". $ProfileImpl"
 $GitConfigImpl = (Join-Path $PSScriptRoot 'gitconfig_global.txt') -replace '\\','/';
 EnsureFileStartsWithLine '~/.gitconfig' "[include] path = $GitConfigImpl";
 
-if ($env:WSL_INTEROP -ne $null) {
+if ($null -ne $env:WSL_INTEROP) {
     $GitConfigWslImpl = (Join-Path $PSScriptRoot 'gitconfig_global_wsl.txt') -replace '\\','/';
     EnsureFileStartsWithLine '~/.gitconfig' "[include] path = $GitConfigWslImpl";
 }
+
+$GitConfigProfileInfo = "gitconfig_global_$($GitProfile).txt"
+EnsureFileStartsWithLine '~/.gitconfig' "[include] path = $($GitConfigProfileInfo)";
