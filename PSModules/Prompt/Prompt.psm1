@@ -74,7 +74,8 @@ function Write-GvfsCapableGitStatus($BranchInfo) {
             Write-Host " $($PoshGitBracketColor)[$($BranchColor)$($branchInfo.Branch)$($PoshGitBracketColor)]$($ResetColor)" -NoNewline
         } else {
             # This is too slow in the big repos (even using RepositoriesInWhichToDisableFileStatus), but nicer elsewhere
-            Write-VcsStatus
+            $vcsStatus = Write-VcsStatus
+            Write-Host -NoNewline $vcsStatus
         }
     }
 }
