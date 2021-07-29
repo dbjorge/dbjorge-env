@@ -39,7 +39,7 @@ if ($global:IsWindows) {
     New-Alias -Force vs 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\devenv.exe'
 
     $env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jre"
-    $env:ANDROID_SDK_HOME = "$env:LOCALAPPDATA\Android\Sdk"
+    $env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
 }
 
 if ($global:IsLinux) {
@@ -60,8 +60,8 @@ if (Test-Command 'exa') {
     New-Alias -Force -Name 'ls' -Value 'exa'
 }
 
-if ($null -ne $env:ANDROID_SDK_HOME) {
-    $PlatformToolsDirectory = Join-Path $env:ANDROID_SDK_HOME 'platform-tools'
+if ($null -ne $env:ANDROID_HOME) {
+    $PlatformToolsDirectory = Join-Path $env:ANDROID_HOME 'platform-tools'
     New-Alias -Force -Name 'adb' -Value (Join-Path $PlatformToolsDirectory 'adb')
 }
 
