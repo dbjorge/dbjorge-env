@@ -62,11 +62,14 @@ if (Test-Command 'exa') {
 
 function global:cdr { cd $ReposDirectory }
 function global:cdas { cd (Join-Path $ReposDirectory 'accessibility-insights-for-android-service') }
+function global:cdasp { cd (Join-Path $ReposDirectory 'accessibility-insights-for-android-service-private') }
 function global:cdasc { cd (Join-Path $ReposDirectory 'axe-sarif-converter') }
 function global:cdaxe { cd (Join-Path $ReposDirectory 'axe-core') }
 function global:cdenv { cd (Join-Path $ReposDirectory 'dbjorge-env') }
 function global:cdjorbs { cd (Join-Path $ReposDirectory 'jorbs-spire-mod') }
+function global:cds { cd (Join-Path $ReposDirectory 'accessibility-insights-service') }
 function global:cdweb { cd (Join-Path $ReposDirectory 'accessibility-insights-web') }
+function global:cdwebp { cd (Join-Path $ReposDirectory 'accessibility-insights-web-private') }
 function global:cdwin { cd (Join-Path $ReposDirectory 'accessibility-insights-windows') }
 
 cdr
