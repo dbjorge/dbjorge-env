@@ -60,6 +60,11 @@ if (Test-Command 'exa') {
     New-Alias -Force -Name 'ls' -Value 'exa'
 }
 
+if ($null -ne $env:ANDROID_SDK_HOME) {
+    $PlatformToolsDirectory = Join-Path $env:ANDROID_SDK_HOME 'platform-tools'
+    New-Alias -Force -Name 'adb' -Value (Join-Path $PlatformToolsDirectory 'adb')
+}
+
 function global:cdr { cd $ReposDirectory }
 function global:cdas { cd (Join-Path $ReposDirectory 'accessibility-insights-for-android-service') }
 function global:cdasp { cd (Join-Path $ReposDirectory 'accessibility-insights-for-android-service-private') }
