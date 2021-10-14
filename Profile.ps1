@@ -8,6 +8,9 @@ if ($PSVersionTable.PSVersion -lt $MinimumVersion) {
 
 Import-Module PSReadLine # PS sometimes disables this if it thinks we're using a screen reader
 Import-Module posh-git
+$env:POSH_GIT_ENABLED = $true # required for oh-my-posh integration
+$GitPromptSettings.BeforeStatus = ''
+$GitPromptSettings.AfterStatus = ''
 
 $EnvDirectory = $PSScriptRoot
 $ReposDirectory = Split-Path $EnvDirectory
@@ -23,7 +26,14 @@ foreach ($ModuleDirectory in (Get-ChildItem $EnvPSModuleDirectory)) {
 }
 
 while (Test-Path alias:prompt) { Remove-Item alias:prompt }
-function global:prompt { Write-PromptEx }
+if ($global:IsLinux -and (Get-Command oh-my-posh-wsl -ErrorAction SilentlyContinue)) {
+    oh-my-posh-wsl --init --shell pwsh --config $PSScriptRoot/dbjorge.omp.json | Invoke-Expression
+} elseif (Get-Command oh-my-posh -ErrorAction SilentlyContinue) {
+    oh-my-posh --init --shell pwsh --config $PSScriptRoot/dbjorge.omp.json | Invoke-Expression
+} else {
+    function global:prompt { Write-PromptEx }
+}
+
 
 New-Alias -Force -Name 'g' -Value 'git'
 New-Alias -Force -Name 'y' -Value 'yarn'
