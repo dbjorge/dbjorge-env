@@ -76,5 +76,3 @@ function global:cds { cd (Join-Path $ReposDirectory 'accessibility-insights-serv
 function global:cdweb { cd (Join-Path $ReposDirectory 'accessibility-insights-web') }
 function global:cdwebp { cd (Join-Path $ReposDirectory 'accessibility-insights-web-private') }
 function global:cdwin { cd (Join-Path $ReposDirectory 'accessibility-insights-windows') }
-
-cdr
