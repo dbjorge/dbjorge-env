@@ -62,7 +62,7 @@ if (Test-Command 'exa') {
 
 if ($null -ne $env:ANDROID_HOME) {
     $PlatformToolsDirectory = Join-Path $env:ANDROID_HOME 'platform-tools'
-    New-Alias -Force -Name 'adb' -Value (Join-Path $PlatformToolsDirectory 'adb')
+    Register-PathElement -PathEnvironmentVariable 'PATH' $PlatformToolsDirectory
 }
 
 function global:cdr { cd $ReposDirectory }
