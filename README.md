@@ -4,8 +4,10 @@ Environment configuration for my home/work machine(s) (mostly Windows)
 
 ## Tools I install on a new machine (in no particular order)
 
+- [FiraMono Nerd Font](https://www.nerdfonts.com/font-downloads) (find your favorite at [programmingfonts.org](https://www.programmingfonts.org/))
 - [Windows Terminal](https://www.microsoft.com/en-us/p/windows-terminal/9n0dx20hk701)
 - [PowerShell](https://github.com/powershell/powershell)
+  - [oh-my-posh](https://ohmyposh.dev/) (`winget install JanDeDobbeleer.OhMyPosh`)
   - [posh-git](https://github.com/dahlbyk/posh-git) (`Install-Module posh-git`)
 - [Git](https://git-scm.com/download/win)
 - [gh (GitHub CLI)](https://github.com/cli/cli)
@@ -15,7 +17,6 @@ Environment configuration for my home/work machine(s) (mostly Windows)
 - [nvm-windows](https://github.com/coreybutler/nvm-windows) to install Node
   - [yarn](https://yarnpkg.com/) (use NVM to install Node.js LTS, then `npm install -g yarn`)
 - [VS Code](https://code.visualstudio.com/docs/setup/windows), with notable extensions:
-  - Bracket Pair Colorizer 2
   - GitLens
   - ESLint
   - Live Share
