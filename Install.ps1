@@ -28,5 +28,5 @@ if ($null -ne $env:WSL_INTEROP) {
     EnsureFileStartsWithLine '~/.gitconfig' "[include] path = $GitConfigWslImpl";
 }
 
-$GitConfigProfileInfo = "gitconfig_global_$($GitProfile).txt"
+$GitConfigProfileInfo = (Join-Path $PSScriptRoot "gitconfig_global_$($GitProfile).txt") -replace '\\','/';
 EnsureFileStartsWithLine '~/.gitconfig' "[include] path = $($GitConfigProfileInfo)";
