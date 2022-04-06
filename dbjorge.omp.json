@@ -1,120 +1,118 @@
 {
   "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
-  "final_space": false,
-  "osc99": true,
-  "console_title": true,
-  "console_title_style": "template",
-  "console_title_template": "{{if .Root}} ⚡ {{end}}{{.Folder}}",
   "blocks": [
     {
-      "type": "prompt",
       "alignment": "left",
       "segments": [
         {
-          "type": "root",
-          "style": "plain",
-          "foreground": "#FFEB3B",
           "background": "#a313a8",
+          "foreground": "#FFEB3B",
           "properties": {
-            "root_icon": "⚡"
-          }
-        },
-        {
-          "type": "os",
+            "root_icon": "\u26a1"
+          },
           "style": "plain",
-          "foreground": "#f8f8f8",
-          "background": "#01376B"
+          "template": " \uf0e7 ",
+          "type": "root"
         },
         {
-          "type": "path",
-          "style": "diamond",
-          "leading_diamond": "<#01376B,#01579B>\uE0B0</>",
-          "trailing_diamond": "\uE0B0",
+          "background": "#01376B",
           "foreground": "#f8f8f8",
+          "style": "plain",
+          "template": " {{ if .WSL }}WSL at {{ end }}{{.Icon}} ",
+          "type": "os"
+        },
+        {
           "background": "#01579B",
-          "properties": {
-            "home_icon": "\uF7DB",
-            "folder_icon": "\uF6D7",
-            "folder_separator_icon": "/",
-            "style": "agnoster_short",
-            "mapped_locations": {
-              "C:/repos": "\uE725",
-              "~/repos": "\uE725",
-              "C:/repos/accessibility-insights-": "\uE725/\uFAA3-",
-              "~/repos/accessibility-insights-": "\uE725/\uFAA3-"
-            }
-          }
-        },
-        {
-          "type": "poshgit",
-          "style": "powerline",
-          "powerline_symbol": "",
-          "invert_powerline": false,
           "foreground": "#f8f8f8",
-          "background": "#29204f",
+          "leading_diamond": "<#01376B,#01579B>\ue0b0</>",
           "properties": {
-            "prefix": " \uE725 "
-          }
-        },
-        {
-          "type": "executiontime",
+            "folder_icon": "\uf6d7",
+            "folder_separator_icon": "/",
+            "home_icon": "\uf7db",
+            "mapped_locations": {
+              "C:/repos": "\ue725",
+              "C:/repos/accessibility-insights-": "\ue725/\ufaa3-",
+              "~/repos": "\ue725",
+              "~/repos/accessibility-insights-": "\ue725/\ufaa3-"
+            },
+            "style": "agnoster_short"
+          },
           "style": "diamond",
-          "leading_diamond": "<transparent,#49404f>\uE0B0</>",
-          "trailing_diamond": "\uE0B0",
-          "foreground": "#ffffff",
-          "background": "#49404f",
-          "properties": {
-            "threshold": 0,
-            "style": "round"
-          }
+          "template": " {{ .Path }} ",
+          "trailing_diamond": "\ue0b0",
+          "type": "path"
         },
         {
-          "type": "exit",
+          "background": "#29204f",
+          "foreground": "#f8f8f8",
+          "powerline_symbol": "\ue0b0",
           "style": "powerline",
-          "powerline_symbol": "\uE0B0",
+          "template": " \ue725 {{ .Status }} ",
+          "type": "poshgit"
+        },
+        {
+          "background": "#49404f",
           "foreground": "#ffffff",
-          "background": "#910000",
+          "leading_diamond": "<transparent,#49404f>\ue0b0</>",
           "properties": {
-            "prefix": "<transparent> \uF12A</> ",
-            "always_numeric": true
-          }
+            "style": "round",
+            "threshold": 0
+          },
+          "style": "diamond",
+          "template": " {{ .FormattedMs }} ",
+          "trailing_diamond": "\ue0b0",
+          "type": "executiontime"
+        },
+        {
+          "background": "#910000",
+          "foreground": "#ffffff",
+          "powerline_symbol": "\ue0b0",
+          "style": "powerline",
+          "template": "<transparent> \uf12a</> {{ if gt .Code 0 }}\uf00d {{ .Code }}{{ else }}\uf42e{{ end }} ",
+          "type": "exit"
         }
-      ]
+      ],
+      "type": "prompt"
     },
     {
-      "type": "prompt",
       "alignment": "right",
       "segments": [
         {
-          "type": "time",
-          "style": "powerline",
-          "powerline_symbol": "\uE0C5",
-          "invert_powerline": true,
-          "foreground": "#3EC669",
           "background": "#29315A",
+          "foreground": "#3EC669",
+          "invert_powerline": true,
+          "powerline_symbol": "\ue0c5",
           "properties": {
             "time_format": "15:04:05"
-          }
+          },
+          "style": "powerline",
+          "template": " {{ .CurrentDate | date .Format }} ",
+          "type": "time"
         }
-      ]
+      ],
+      "type": "prompt"
     },
     {
-      "type": "prompt",
       "alignment": "left",
       "newline": true,
       "segments": [
         {
-          "type": "exit",
-          "style": "plain",
           "foreground": "#ffffff",
+          "foreground_templates": [
+            "{{ if gt .Code 0 }}#ff0000{{ end }}"
+          ],
           "properties": {
-            "prefix": "\u276F",
-            "always_enabled": true,
-            "error_color": "#ff0000",
-            "display_exit_code": false
-          }
+            "always_enabled": true
+          },
+          "style": "plain",
+          "template": "\u276f ",
+          "type": "exit"
         }
-      ]
+      ],
+      "type": "prompt"
     }
-  ]
+  ],
+  "console_title_template": "{{if .Root}} \u26a1 {{end}}{{.Folder}}",
+  "osc99": true,
+  "version": 2
 }
