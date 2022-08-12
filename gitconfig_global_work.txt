@@ -1,3 +1,5 @@
 [user]
     name = Dan Bjorge
     email = danielbj@microsoft.com
+    # This key should never be present on non-work devices
+    signingkey = 22753D4321ABA795
