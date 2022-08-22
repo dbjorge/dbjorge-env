@@ -1,3 +1,5 @@
 [user]
     name = Dan Bjorge
     email = dan@dbjorge.net
+    # This key should never be present on work devices
+    signingkey = 87BE0F5E72CBFD3B
