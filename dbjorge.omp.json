@@ -1,5 +1,12 @@
 {
   "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
+  "palette": {
+    "git_branch_default": "lightCyan",
+    "git_branch_ahead": "lightGreen",
+    "git_branch_behind": "lightRed",
+    "git_working": "red",
+    "git_staging": "green"
+  },
   "blocks": [
     {
       "alignment": "left",
@@ -47,8 +54,11 @@
           "foreground": "#f8f8f8",
           "powerline_symbol": "\ue0b0",
           "style": "powerline",
-          "template": " \ue725 {{ .Status }} ",
-          "type": "poshgit"
+          "template": "\ue725 {{if gt .Behind 0}}<p:git_branch_behind>{{else}}{{if gt .Ahead 0}}<p:git_branch_ahead>{{else}}<p:git_branch_default>{{end}}{{end}}{{ .HEAD }}{{if .BranchStatus }} {{ .BranchStatus }}{{ end }}</>{{ if .Staging.Changed }} <p:git_staging>+{{ .Staging.Added }} ~{{.Staging.Modified}} -{{.Staging.Deleted}}</>{{ end }}{{ if and (.Staging.Changed) (.Working.Changed) }} |{{ end }}{{ if .Working.Changed }} <p:git_working>+{{ .Working.Added }} ~{{.Working.Modified}} -{{.Working.Deleted}} !</>{{ end }}",
+          "properties": {
+            "branch_icon": ""
+          },
+          "type": "git"
         },
         {
           "background": "#49404f",
