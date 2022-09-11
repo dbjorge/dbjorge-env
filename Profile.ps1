@@ -75,6 +75,7 @@ if ($null -ne $env:ANDROID_HOME) {
 }
 
 function global:cdr { cd $ReposDirectory }
+function global:cdacn { cd (Join-Path $ReposDirectory 'axe-core-nuget') }
 function global:cdas { cd (Join-Path $ReposDirectory 'accessibility-insights-for-android-service') }
 function global:cdasp { cd (Join-Path $ReposDirectory 'accessibility-insights-for-android-service-private') }
 function global:cdasc { cd (Join-Path $ReposDirectory 'axe-sarif-converter') }
