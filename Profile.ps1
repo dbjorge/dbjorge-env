@@ -76,10 +76,13 @@ if ($null -ne $env:ANDROID_HOME) {
 
 function global:cdr { cd $ReposDirectory }
 function global:cdacn { cd (Join-Path $ReposDirectory 'axe-core-nuget') }
+function global:cda { cd (Join-Path $ReposDirectory 'accessibility-insights-action') }
 function global:cdas { cd (Join-Path $ReposDirectory 'accessibility-insights-for-android-service') }
 function global:cdasp { cd (Join-Path $ReposDirectory 'accessibility-insights-for-android-service-private') }
 function global:cdasc { cd (Join-Path $ReposDirectory 'axe-sarif-converter') }
 function global:cdaxe { cd (Join-Path $ReposDirectory 'axe-core') }
+function global:cddocs { cd (Join-Path $ReposDirectory 'accessibility-insights-docs') }
+function global:cdengms { cd (Join-Path $ReposDirectory '1ES-on-EngHub') }
 function global:cdenv { cd (Join-Path $ReposDirectory 'dbjorge-env') }
 function global:cdjorbs { cd (Join-Path $ReposDirectory 'jorbs-spire-mod') }
 function global:cds { cd (Join-Path $ReposDirectory 'accessibility-insights-service') }
