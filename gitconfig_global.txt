@@ -5,10 +5,9 @@
     autocrlf = input # Always converts crlf to lf on commit
     safecrlf = true # Fail fast on EOL inconsistencies
     editor = code --wait
+    excludesFile = "~/repos/dbjorge-env/gitignore_global.txt"
 [commit]
     gpgsign = true
-[gpg]
-    program = "C:\\Program Files (x86)\\GnuPG\\bin\\gpg.exe"
 [init]
     defaultBranch = main
 [diff]
@@ -24,6 +23,7 @@
     # List branches sorted by last-modified
     b = "!git for-each-ref --sort='authordate' --color=auto --format='%(color:bold cyan)%(align:width=20)%(authordate:human)%(end)%(color:reset)%09%(color:bold magenta)%(objectname:short)%(color:reset) %(color: bold green)%(HEAD)%(color:reset)%(align:width=9,position=right)%(upstream:remotename)%(end):%(color:bold white)%(refname:lstrip=2)%(color:reset)' refs/heads"
     c = commit
+    cm = commit -m
     cam = !"git add -A && git commit -m"
     camend = commit --amend --reuse-message=HEAD
     # 1. fork project from https://github.com/other-org/some-repo to https://github.com/dbjorge/some-repo

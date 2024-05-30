@@ -1,0 +1,2 @@
+# Must be ignored for Peacock/etc
+.vscode/settings.json
