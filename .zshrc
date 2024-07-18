@@ -7,7 +7,8 @@
 export ZSH="$HOME/.oh-my-zsh"
 
 # See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
-ZSH_THEME="af-magic"
+ZSH_CUSTOM="$HOME/repos/dbjorge-env/.oh-my-zsh/custom"
+ZSH_THEME="dbjorge"
 
 # oh-my-zsh update policy 
 zstyle ':omz:update' mode reminder
@@ -56,12 +57,15 @@ else
   export EDITOR='code'
 fi
 
+eval "$(gh copilot alias -- zsh)"
+
 ## --- Aliases
 
 alias cdr="cd ~/repos/"
 alias cdac="cd ~/repos/axe-core"
 alias cdacnpm="cd ~/repos/axe-core-npm"
 alias cdacnuget="cd ~/repos/axe-core-nuget"
+alias cdenv="cd ~/repos/dbjorge-env"
 alias cdw3="cd ~/repos/wcag"
 alias cdwcag="cd ~/repos/wcag"
 alias cdwe="cd ~/repos/watcher-examples"
