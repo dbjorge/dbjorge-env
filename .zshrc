@@ -19,7 +19,7 @@ zstyle ':omz:update' frequency 13 # days
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git history-substring-search)
+plugins=(git poetry history-substring-search)
 # history-substring-search bindings
 bindkey '^[[A' history-substring-search-up
 bindkey '^[[B' history-substring-search-down
