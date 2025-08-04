@@ -45,8 +45,7 @@ fi
 alias ssh="TERM=xterm-256color ssh"
 
 export GH_PAGER="cat"
-export PATH="$HOME/chromedriver:$HOME/.cargo/bin:$PATH"
-
+export PATH="$HOME/chromedriver:$HOME/.cargo/bin:$PATH:$HOME/repos/dbjorge-env/scripts"
 export AWS_SDK_LOAD_CONFIG=1
 
 # Preferred editor for local and remote sessions
@@ -62,6 +61,9 @@ else
   fi
 fi
 export VISUAL="$EDITOR"
+
+# Disables line number gutter in bat for easier copy/paste
+export BAT_STYLE=header-filename,header-filesize,grid
 
 ## --- Directory management
 
