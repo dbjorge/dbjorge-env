@@ -3,6 +3,8 @@
 # Test script for repeat.sh
 # Run with: ./repeat.test.sh
 
+IMPL_SCRIPT="$(dirname "$0")/../repeat.sh"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -64,86 +66,86 @@ echo
 
 # Test 1: Basic usage with simple command
 run_test "Basic usage - simple echo command" 0 \
-    "./scripts/repeat.sh 2 'echo hello'"
+    "$IMPL_SCRIPT 2 'echo hello'"
 
 # Test 2: Basic usage with sleep command
 run_test "Basic usage - sleep command" 0 \
-    "./scripts/repeat.sh 2 'sleep 0.1 && echo slept'"
+    "$IMPL_SCRIPT 2 'sleep 0.1 && echo slept'"
 
 # Test 3: Invalid number of iterations
 run_test "Invalid iterations - zero" 1 \
-    "./scripts/repeat.sh 0 'echo hello'"
+    "$IMPL_SCRIPT 0 'echo hello'"
 
 # Test 4: Invalid number of iterations (negative)
 run_test "Invalid iterations - negative" 1 \
-    "./scripts/repeat.sh -1 'echo hello'"
+    "$IMPL_SCRIPT -1 'echo hello'"
 
 # Test 5: Invalid number of iterations (non-numeric)
 run_test "Invalid iterations - non-numeric" 1 \
-    "./scripts/repeat.sh abc 'echo hello'"
+    "$IMPL_SCRIPT abc 'echo hello'"
 
 # Test 6: Missing command
 run_test "Missing command" 1 \
-    "./scripts/repeat.sh 5"
+    "$IMPL_SCRIPT 5"
 
 # Test 7: Missing iterations
 run_test "Missing iterations" 1 \
-    "./scripts/repeat.sh"
+    "$IMPL_SCRIPT"
 
 # Test 8: Unknown flag
 run_test "Unknown flag" 1 \
-    "./scripts/repeat.sh --unknown-flag 5 'echo hello'"
+    "$IMPL_SCRIPT --unknown-flag 5 'echo hello'"
 
 # Test 9: Command that fails
 run_test "Command that fails" 1 \
-    "./scripts/repeat.sh 2 'false'"
+    "$IMPL_SCRIPT 2 'false'"
 
 # Test 10: Continue on error flag
 run_test "Continue on error flag" 1 \
-    "./scripts/repeat.sh --continue-on-error 3 'false'"
+    "$IMPL_SCRIPT --continue-on-error 3 'false'"
 
 # Test 11: No summary flag
 run_test "No summary flag" 0 \
-    "./scripts/repeat.sh --no-summary 2 'echo hello'"
+    "$IMPL_SCRIPT --no-summary 2 'echo hello'"
 
 # Test 12: Both flags together
 run_test "Both flags together" 1 \
-    "./scripts/repeat.sh --continue-on-error --no-summary 3 'false'"
+    "$IMPL_SCRIPT --continue-on-error --no-summary 3 'false'"
 
 # Test 13: Command with spaces and special characters
 run_test "Command with spaces and special chars" 0 \
-    "./scripts/repeat.sh 2 'echo \"Hello World\" && echo \"Test 123\"'"
+    "$IMPL_SCRIPT 2 'echo \"Hello World\" && echo \"Test 123\"'"
 
 # Test 14: Command that succeeds sometimes, fails sometimes
 run_test "Intermittent command with continue-on-error" 1 \
-    "./scripts/repeat.sh --continue-on-error 4 'if [ \$((RANDOM % 2)) -eq 0 ]; then echo success; else false; fi'"
+    "$IMPL_SCRIPT --continue-on-error 4 'if [ \$((RANDOM % 2)) -eq 0 ]; then echo success; else false; fi'"
 
 # Test 15: Very fast command (testing timing precision)
 run_test "Very fast command" 0 \
-    "./scripts/repeat.sh 5 'echo fast'"
+    "$IMPL_SCRIPT 5 'echo fast'"
 
 # Test 16: Command with output redirection
 run_test "Command with output redirection" 0 \
-    "./scripts/repeat.sh 2 'echo redirected > /tmp/test_output.txt && cat /tmp/test_output.txt'"
+    "$IMPL_SCRIPT 2 'echo redirected > /tmp/repeat_test_output.txt && cat /tmp/repeat_test_output.txt'"
 
 # Test 17: Command that uses environment variables
 run_test "Command with environment variables" 0 \
-    "TEST_VAR=hello ./scripts/repeat.sh 2 'echo \$TEST_VAR'"
+    "TEST_VAR=hello $IMPL_SCRIPT 2 'echo \$TEST_VAR'"
 
 # Test 18: Command with pipes
 run_test "Command with pipes" 0 \
-    "./scripts/repeat.sh 2 'echo hello world | wc -w'"
+    "$IMPL_SCRIPT 2 'echo hello world | wc -w'"
 
 # Test 19: Command that creates files
 run_test "Command that creates files" 0 \
-    "./scripts/repeat.sh 2 'echo run_\$RANDOM > /tmp/repeat_test_\$RANDOM.txt'"
+    "$IMPL_SCRIPT 2 'echo run_\$RANDOM > /tmp/repeat_test_\$RANDOM.txt'"
 
 # Test 20: Command with complex logic
 run_test "Complex command logic" 0 \
-    "./scripts/repeat.sh 3 'for i in 1 2 3; do echo \"Iteration \$i\"; done'"
+    "$IMPL_SCRIPT 3 'for i in 1 2 3; do echo \"Iteration \$i\"; done'"
 
 # Clean up any test files
-rm -f /tmp/test_output.txt /tmp/repeat_test_*.txt
+rm -f /tmp/repeat_test_output.txt /tmp/repeat_test_*.txt
 
 echo
 echo "=========================================="
