@@ -17,9 +17,9 @@ Environment configuration for my home/work machine(s) (mostly Windows)
 - [Android Studio](https://developer.android.com/studio) if I'm doing Android development (eg, [accessibility-insights-for-android-service](https://github.com/microsoft/accessibility-insights-for-android-service))
 - [Beyond Compare](http://www.scootersoftware.com/download.php)
 - [zsh](https://en.wikipedia.org/wiki/Z_shell)
-  - [zsh-completions](https://github.com/zsh-users/zsh-completions) ([OBS repo](https://software.opensuse.org/download.html?project=shells%3Azsh-users%3Azsh-completions&package=zsh-completions))
+  - [zsh-completions](https://github.com/zsh-users/zsh-completions) (`brew install zsh-completions` / [OBS repo](https://software.opensuse.org/download.html?project=shells%3Azsh-users%3Azsh-completions&package=zsh-completions))
   - [zsh-history-substring-search](https://github.com/zsh-users/zsh-history-substring-search) (`gh repo clone zsh-users/zsh-history-substring-search`)
-  - [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting) ([OBS repo](https://software.opensuse.org/download.html?project=shells%3Azsh-users%3Azsh-syntax-highlighting&package=zsh-syntax-highlighting))
+  - [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting) (`brew install zsh-syntax-highlighting` / [OBS repo](https://software.opensuse.org/download.html?project=shells%3Azsh-users%3Azsh-syntax-highlighting&package=zsh-syntax-highlighting))
 
 ### Mac
 

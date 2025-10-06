@@ -92,11 +92,15 @@ if [ -f $ZSH_HISTORY_SUBSTRING_SEARCH_PATH ]; then
 fi
 
 # Must load last
-ZSH_SYNTAX_HIGHLIGHTING_PATH=/usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-if [ -f $ZSH_SYNTAX_HIGHLIGHTING_PATH ]; then
-  source $ZSH_SYNTAX_HIGHLIGHTING_PATH
-  ZSH_HIGHLIGHT_HIGHLIGHTERS+=(brackets)
-fi
+for ZSH_SYNTAX_HIGHLIGHTING_PATH in \
+  "/opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" \
+  "/usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"; do
+  if [ -f $ZSH_SYNTAX_HIGHLIGHTING_PATH ]; then
+    source $ZSH_SYNTAX_HIGHLIGHTING_PATH
+    break
+  fi
+done
+ZSH_HIGHLIGHT_HIGHLIGHTERS+=(brackets)
 
 ## --- Aliases
 
