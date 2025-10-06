@@ -116,9 +116,9 @@ run_test "Both flags together" 1 \
 run_test "Command with spaces and special chars" 0 \
     "$IMPL_SCRIPT 2 'echo \"Hello World\" && echo \"Test 123\"'"
 
-# Test 14: Command that succeeds sometimes, fails sometimes
-run_test "Intermittent command with continue-on-error" 1 \
-    "$IMPL_SCRIPT --continue-on-error 4 'if [ \$((RANDOM % 2)) -eq 0 ]; then echo success; else false; fi'"
+# Test 14: Command that fails on iterations 2 and 3, succeeds on 1 and 4
+run_test "Continue through failures with continue-on-error" 1 \
+    "$IMPL_SCRIPT --continue-on-error 4 'count=\$(cat /tmp/repeat_test_counter.txt 2>/dev/null || echo 0); count=\$((count + 1)); echo \$count > /tmp/repeat_test_counter.txt; if [ \$count -eq 2 ] || [ \$count -eq 3 ]; then echo \"Iteration \$count: failing\"; false; else echo \"Iteration \$count: success\"; fi' && rm -f /tmp/repeat_test_counter.txt"
 
 # Test 15: Very fast command (testing timing precision)
 run_test "Very fast command" 0 \
