@@ -117,12 +117,12 @@ async function getDownloadsByMajorVersion(packageName, options) {
 
   // Fetch downloads for all versions at once using the versions API
   const versionsDownloadsData = await fetchJSON(
-    `https://api.npmjs.org/versions/${packageName}/${downloadPeriod}`
+    `https://api.npmjs.org/versions/${encodeURIComponent(packageName)}/${downloadPeriod}`
   )
 
   // Fetch total downloads
   const downloadsData = await fetchJSON(
-    `https://api.npmjs.org/downloads/point/${downloadPeriod}/${packageName}`
+    `https://api.npmjs.org/downloads/point/${downloadPeriod}/${encodeURIComponent(packageName)}`
   )
 
   // Build a map of version downloads
