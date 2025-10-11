@@ -77,6 +77,9 @@ for index ({1..9}) alias "$index"="cd +${index}"; unset index
 ## --- zsh options
 
 setopt COMPLETE_IN_WORD
+bindkey  "^[[H"   beginning-of-line
+bindkey  "^[[F"   end-of-line
+bindkey  "^[[3~"  delete-char
 
 ## --- Prompt
 
