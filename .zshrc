@@ -119,7 +119,16 @@ gwt() {
   target=$(git wt "$@") || return 1
   cd "$target"
 }
-
+_gwt() {
+  local root repo parent wt_dir
+  root=$(git rev-parse --show-toplevel 2>/dev/null) || return
+  repo=$(basename "$root")
+  parent=$(dirname "$root")
+  wt_dir="${parent}/../worktrees/${repo}"
+  if [[ -d "$wt_dir" ]]; then
+    compadd -- "$wt_dir"/*(/:t)
+  fi
+}
 alias cdr="cd ~/repos/"
 alias cdac="cd ~/repos/axe-core"
 alias cdacnpm="cd ~/repos/axe-core-npm"
@@ -133,3 +142,4 @@ alias cdwep="cd ~/repos/watcher-examples/playwright/basic"
 
 autoload -U compinit
 compinit
+compdef _gwt gwt
