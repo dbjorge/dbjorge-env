@@ -1,15 +1,17 @@
 ---
 name: markdown-charts
-description: Guidelines for creating charts and diagrams in markdown files. Use when adding visual diagrams, flowcharts, sequence diagrams, or any other chart to a markdown document.
+description: Guidelines for creating charts and diagrams in markdown files. Use ONLY when writing charts into markdown files (*.md), NOT for chat responses in agent sessions.
 ---
 
 # Charts in Markdown Files
+
+These rules apply **only when writing charts or diagrams into markdown files**. If you are responding in a chat session with an agent (OpenCode, Claude Code, etc.) and not writing to a markdown file, prefer ASCII art instead -- it renders immediately in the terminal without requiring a markdown renderer.
 
 When creating charts or diagrams in markdown files, follow these rules:
 
 ## Use Mermaid syntax
 
-Always use [Mermaid](https://mermaid.js.org/) fenced code blocks for charts and diagrams. Do not use ASCII art.
+Always use [Mermaid](https://mermaid.js.org/) fenced code blocks for charts and diagrams in markdown files. Do not use ASCII art in markdown files (it is not accessible and mermaid renders better in markdown viewers).
 
 ~~~markdown
 ```mermaid
