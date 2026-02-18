@@ -3,7 +3,7 @@
 #   - gh
 #   - vim
 # OPTIONAL PREREQS:
-#   - nvm
+#   - asdf (or nvm)
 #   - rbenv
 #   - uv
 #   - openjdk
@@ -24,8 +24,14 @@
 
 ## --- Tool setup
 
-# nvm
-if [ -d "$HOME/.nvm" ]; then
+# fnm
+if [ -f "$(which fnm)" ]; then
+  echo "Using fnm"
+  eval "$(fnm env --use-on-cd --shell zsh)"
+  alias nvm="echo 'Use asdf instead' && exit 1"
+#nvm (deprecated, prefer asdf)
+elif [ -d "$HOME/.nvm" ]; then
+  echo "Using nvm"
   export NVM_DIR="$HOME/.nvm"
   [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
   [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" 
@@ -106,6 +112,13 @@ done
 ZSH_HIGHLIGHT_HIGHLIGHTERS+=(brackets)
 
 ## --- Aliases
+
+# git worktree wrapper - creates worktree + branch if needed, then cd's into it
+gwt() {
+  local target
+  target=$(git wt "$@") || return 1
+  cd "$target"
+}
 
 alias cdr="cd ~/repos/"
 alias cdac="cd ~/repos/axe-core"
