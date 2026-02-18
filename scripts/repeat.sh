@@ -80,10 +80,10 @@ for ((i=1; i<=iterations; i++)); do
     # Run the command
     if eval "$command"; then
         exit_code=0
-        ((successful_runs++))
+        ((successful_runs++)) || true
     else
         exit_code=$?
-        ((failed_runs++))
+        ((failed_runs++)) || true
         if [[ "$continue_on_error" == false ]]; then
             echo "Command failed with exit code $exit_code. Stopping."
             exit $exit_code
@@ -92,7 +92,7 @@ for ((i=1; i<=iterations; i++)); do
     
     # Record end time and calculate duration
     end_time=$(date +%s.%N)
-    duration=$(echo "$end_time - $start_time" | bc -l)
+    duration=$(awk "BEGIN {printf \"%.9f\", $end_time - $start_time}")
     times+=($duration)
     exit_codes+=($exit_code)
     
@@ -114,27 +114,27 @@ if [[ "$show_summary" == true ]]; then
         # Calculate average
         total_time=0
         for time in "${times[@]}"; do
-            total_time=$(echo "$total_time + $time" | bc -l)
+            total_time=$(awk "BEGIN {printf \"%.9f\", $total_time + $time}")
         done
-        average=$(echo "$total_time / ${#times[@]}" | bc -l)
+        average=$(awk "BEGIN {printf \"%.9f\", $total_time / ${#times[@]}}")
         
         # Calculate variance
         variance=0
         for time in "${times[@]}"; do
-            diff=$(echo "$time - $average" | bc -l)
-            squared_diff=$(echo "$diff * $diff" | bc -l)
-            variance=$(echo "$variance + $squared_diff" | bc -l)
+            diff=$(awk "BEGIN {printf \"%.9f\", $time - $average}")
+            squared_diff=$(awk "BEGIN {printf \"%.9f\", $diff * $diff}")
+            variance=$(awk "BEGIN {printf \"%.9f\", $variance + $squared_diff}")
         done
-        variance=$(echo "$variance / ${#times[@]}" | bc -l)
+        variance=$(awk "BEGIN {printf \"%.9f\", $variance / ${#times[@]}}")
         
         # Calculate min and max
         min_time=${times[0]}
         max_time=${times[0]}
         for time in "${times[@]}"; do
-            if (( $(echo "$time < $min_time" | bc -l) )); then
+            if awk "BEGIN {exit !($time < $min_time)}"; then
                 min_time=$time
             fi
-            if (( $(echo "$time > $max_time" | bc -l) )); then
+            if awk "BEGIN {exit !($time > $max_time)}"; then
                 max_time=$time
             fi
         done
