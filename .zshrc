@@ -113,11 +113,56 @@ ZSH_HIGHLIGHT_HIGHLIGHTERS+=(brackets)
 
 ## --- Aliases
 
+# cd to the original repo root (~/repos/<repo>) from a repo or worktree
+gr() {
+  local root parent
+  root=$(git rev-parse --show-toplevel 2>/dev/null) || { echo "Not in a git repo" >&2; return 1; }
+  parent=$(dirname "$root")
+  if [[ "$(basename "$parent")" == "repos" ]]; then
+    cd "$root"
+  elif [[ "$(basename "$(dirname "$parent")")" == "worktrees" ]]; then
+    cd "$(dirname "$(dirname "$parent")")/repos/$(basename "$parent")"
+  else
+    echo "Error: unable to determine main repo directory" >&2; return 1
+  fi
+}
+
 # git worktree wrapper - creates worktree + branch if needed, then cd's into it
+# with no args: cd to worktree root (if in a worktree) or prompt for a worktree name
 gwt() {
-  local target
-  target=$(git wt "$@") || return 1
-  cd "$target"
+  if [[ $# -eq 0 ]]; then
+    local root parent
+    root=$(git rev-parse --show-toplevel 2>/dev/null) || { echo "Not in a git repo" >&2; return 1; }
+    parent=$(dirname "$root")
+    if [[ "$(basename "$(dirname "$parent")")" == "worktrees" ]]; then
+      cd "$root"
+    else
+      local repo wt_dir choice
+      repo=$(basename "$root")
+      wt_dir="$(dirname "$parent")/worktrees/$repo"
+      if [[ ! -d "$wt_dir" ]] || [[ -z "$(ls -A "$wt_dir" 2>/dev/null)" ]]; then
+        echo "No worktrees found for $repo" >&2; return 1
+      fi
+      echo "Available worktrees for $repo:"
+      local -a wts
+      wts=("$wt_dir"/*(/:t))
+      local i
+      for i in {1..${#wts[@]}}; do
+        echo "  $i) ${wts[$i]}"
+      done
+      echo -n "Select worktree: "
+      read choice
+      if [[ "$choice" =~ ^[0-9]+$ ]] && (( choice >= 1 && choice <= ${#wts[@]} )); then
+        cd "$wt_dir/${wts[$choice]}"
+      else
+        echo "Invalid selection" >&2; return 1
+      fi
+    fi
+  else
+    local target
+    target=$(git wt "$@") || return 1
+    cd "$target"
+  fi
 }
 _gwt() {
   local root repo parent wt_dir
