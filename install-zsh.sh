@@ -72,6 +72,21 @@ fi
 GIT_CONFIG_PROFILE_IMPL="$SCRIPT_DIR/gitconfig_global_$GIT_PROFILE.txt"
 ensure_file_starts_with_line "$HOME/.gitconfig" "[include] path = $GIT_CONFIG_PROFILE_IMPL"
 
+# Configure Claude Code skills symlink
+SKILLS_DIR="$SCRIPT_DIR/skills"
+CLAUDE_SKILLS_LINK="$HOME/.claude/skills"
+mkdir -p "$HOME/.claude"
+if [[ -L "$CLAUDE_SKILLS_LINK" ]]; then
+    # Remove existing symlink so we can update it
+    rm "$CLAUDE_SKILLS_LINK"
+elif [[ -e "$CLAUDE_SKILLS_LINK" ]]; then
+    echo "Warning: $CLAUDE_SKILLS_LINK exists and is not a symlink, skipping"
+fi
+if [[ ! -e "$CLAUDE_SKILLS_LINK" ]]; then
+    ln -s "$SKILLS_DIR" "$CLAUDE_SKILLS_LINK"
+fi
+
 echo "Installation complete!"
 echo "Zsh profile configured to source: $ZSHRC_IMPL"
 echo "Git config configured with profile: $GIT_PROFILE"
+echo "Claude Code skills linked: $CLAUDE_SKILLS_LINK -> $SKILLS_DIR"
