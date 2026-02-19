@@ -53,11 +53,45 @@ PS1_SUFFIX="
 %F{32}\$(prompt_git_segment) %F{105}%(!.#.>)%f "
 PS2="%F{red}\ %f"
 
+## --- iTerm2 tab title helpers
+
+# Returns a label for the current directory:
+#   ~/repos/repo-name/...        -> "repo-name"
+#   ~/worktrees/repo-name/branch -> "repo-name/branch"
+#   (non-git directory)          -> directory basename
+_tab_title_label() {
+  local root
+  root=$(git rev-parse --show-toplevel 2>/dev/null) || { echo "$(basename "$PWD")"; return; }
+  local parent
+  parent=$(dirname "$root")
+  if [[ "$(basename "$(dirname "$parent")")" == "worktrees" ]]; then
+    # ~/worktrees/repo-name/branch -> repo-name/branch
+    echo "$(basename "$parent")/$(basename "$root")"
+  else
+    echo "$(basename "$root")"
+  fi
+}
+
+# Sets the iTerm2 tab title via escape sequence.
+_set_tab_title() {
+  print -Pn "\e]1;$1\a"
+}
+
 function preexec() {
   timer=$(timestamp)
+
+  # Set tab title with prefix for known coding agents
+  local cmd="${1%% *}"  # first word of the command
+  case "$cmd" in
+    opencode) _set_tab_title "OC $(_tab_title_label)" ;;
+    claude)   _set_tab_title "CC $(_tab_title_label)" ;;
+  esac
 }
 
 function precmd() {
+  # Reset tab title to just the repo/dir name (plain shell session)
+  _set_tab_title "$(_tab_title_label)"
+
   export PS1="$PS1_SUFFIX"
 
   if [ $timer ]; then
