@@ -26,10 +26,8 @@
 
 # fnm
 if [ -f "$(which fnm)" ]; then
-  echo "Using fnm"
   eval "$(fnm env --use-on-cd --shell zsh)"
-  alias nvm="echo 'Use asdf instead' && exit 1"
-#nvm (deprecated, prefer asdf)
+#nvm (deprecated, prefer fnm)
 elif [ -d "$HOME/.nvm" ]; then
   echo "Using nvm"
   export NVM_DIR="$HOME/.nvm"
