@@ -3,7 +3,6 @@
     fscache = true
     eol = lf
     autocrlf = input # Always converts crlf to lf on commit
-    safecrlf = true # Fail fast on EOL inconsistencies
     editor = code --wait
 [commit]
     gpgsign = true
