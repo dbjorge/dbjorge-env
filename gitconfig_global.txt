@@ -4,10 +4,9 @@
     eol = lf
     autocrlf = input # Always converts crlf to lf on commit
     editor = code --wait
+    excludesFile = "~/repos/dbjorge-env/gitignore_global.txt"
 [commit]
     gpgsign = true
-[gpg]
-    program = "C:\\Program Files (x86)\\GnuPG\\bin\\gpg.exe"
 [init]
     defaultBranch = main
 [diff]
@@ -19,10 +18,13 @@
     tool = vscode
 [mergetool "vscode"]
     cmd = code --wait $MERGED
+[pull]
+    rebase = true
 [alias]
     # List branches sorted by last-modified
     b = "!git for-each-ref --sort='authordate' --color=auto --format='%(color:bold cyan)%(align:width=20)%(authordate:human)%(end)%(color:reset)%09%(color:bold magenta)%(objectname:short)%(color:reset) %(color: bold green)%(HEAD)%(color:reset)%(align:width=9,position=right)%(upstream:remotename)%(end):%(color:bold white)%(refname:lstrip=2)%(color:reset)' refs/heads"
     c = commit
+    cm = commit -m
     cam = !"git add -A && git commit -m"
     camend = commit --amend --reuse-message=HEAD
     # 1. fork project from https://github.com/other-org/some-repo to https://github.com/dbjorge/some-repo
@@ -38,3 +40,23 @@
     renamed-upstream = "!git branch -m $1 $2 && git fetch upstream && git branch -u upstream/$2 $2 && :"
     s = status -sb
     unstage = reset --
+    # Worktree helper: ensures branch+worktree exist in ../worktrees/repo/branch. Use via "gwt <branch>" shell fn for auto-cd.
+    wt = "!f() { \
+        root=$(git rev-parse --show-toplevel) && \
+        repo=$(basename \"$root\") && \
+        parent=$(dirname \"$root\") && \
+        if [ \"$(basename \"$parent\")\" != \"repos\" ]; then \
+            echo \"Error: repo must be inside a \\\"repos\\\" directory\" >&2; exit 1; \
+        fi && \
+        target=\"$parent/../worktrees/$repo/$1\" && \
+        if [ -z \"$1\" ]; then echo \"Usage: git wt <branch>\" >&2; exit 1; fi && \
+        if [ -d \"$target\" ]; then echo \"$target\"; exit 0; fi && \
+        mkdir -p \"$(dirname \"$target\")\" && \
+        if git show-ref --verify --quiet \"refs/heads/$1\" || \
+           git show-ref --verify --quiet \"refs/remotes/origin/$1\"; then \
+            git worktree add \"$target\" \"$1\" >&2; \
+        else \
+            git worktree add -b \"$1\" \"$target\" >&2; \
+        fi && \
+        echo \"$target\"; \
+    }; f"

@@ -30,3 +30,22 @@ if ($null -ne $env:WSL_INTEROP) {
 
 $GitConfigProfileInfo = (Join-Path $PSScriptRoot "gitconfig_global_$($GitProfile).txt") -replace '\\','/';
 EnsureFileStartsWithLine '~/.gitconfig' "[include] path = $($GitConfigProfileInfo)";
+
+# Configure Claude Code skills symlink
+$SkillsDir = Join-Path $PSScriptRoot 'skills';
+$ClaudeDir = Join-Path $HOME '.claude';
+$ClaudeSkillsLink = Join-Path $ClaudeDir 'skills';
+if (-not (Test-Path $ClaudeDir)) {
+    New-Item -Type Directory -Path $ClaudeDir | Out-Null;
+}
+if (Test-Path $ClaudeSkillsLink) {
+    $item = Get-Item $ClaudeSkillsLink;
+    if ($item.LinkType -eq 'SymbolicLink') {
+        Remove-Item $ClaudeSkillsLink;
+    } else {
+        Write-Warning "$ClaudeSkillsLink exists and is not a symlink, skipping";
+    }
+}
+if (-not (Test-Path $ClaudeSkillsLink)) {
+    New-Item -ItemType SymbolicLink -Path $ClaudeSkillsLink -Target $SkillsDir | Out-Null;
+}
