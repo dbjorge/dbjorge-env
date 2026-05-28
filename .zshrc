@@ -173,15 +173,41 @@ _gwt() {
   fi
 }
 
-# Worktree for a GitHub PR: gwtpr <pr-number>. Creates ../worktrees/<repo>/<dir>
+# Worktree for a GitHub PR: gwtpr [pr-number]. With no args, shows a numbered
+# picker of the 30 most recent open PRs. Creates ../worktrees/<repo>/<dir>
 # (detached) where <dir> is the head branch's leaf segment truncated to 32 chars,
 # cd's in, and runs `gh pr checkout` so the branch is set up correctly (handles
 # forks). If the worktree already exists and is dirty, bails without cd.
 gwtpr() {
-  if [[ $# -ne 1 ]]; then
-    echo "Usage: gwtpr <pr-number>" >&2; return 1
+  local pr
+  if [[ $# -eq 0 ]]; then
+    local pr_list_output
+    pr_list_output=$(gh pr list --limit 30 --json number,title,author -q '.[] | "\(.number)\t\(.title) (@\(.author.login))"' 2>/dev/null) || {
+      echo "Failed to list PRs" >&2; return 1
+    }
+    if [[ -z "$pr_list_output" ]]; then
+      echo "No open PRs found" >&2; return 1
+    fi
+    local -a pr_lines
+    pr_lines=("${(@f)pr_list_output}")
+    echo "Recent open PRs:"
+    local i
+    for i in {1..${#pr_lines[@]}}; do
+      printf "  %2d) #%s\n" "$i" "${pr_lines[$i]//$'\t'/  }"
+    done
+    local choice
+    echo -n "Select PR: "
+    read choice
+    if [[ "$choice" =~ ^[0-9]+$ ]] && (( choice >= 1 && choice <= ${#pr_lines[@]} )); then
+      pr="${pr_lines[$choice]%%$'\t'*}"
+    else
+      echo "Invalid selection" >&2; return 1
+    fi
+  elif [[ $# -eq 1 ]]; then
+    pr="$1"
+  else
+    echo "Usage: gwtpr [pr-number]" >&2; return 1
   fi
-  local pr="$1"
   local root repo parent
   root=$(git rev-parse --show-toplevel 2>/dev/null) || { echo "Not in a git repo" >&2; return 1; }
   repo=$(basename "$root")
