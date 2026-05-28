@@ -40,7 +40,9 @@
     renamed-upstream = "!git branch -m $1 $2 && git fetch upstream && git branch -u upstream/$2 $2 && :"
     s = status -sb
     unstage = reset --
-    # Worktree helper: ensures branch+worktree exist in ../worktrees/repo/branch. Use via "gwt <branch>" shell fn for auto-cd.
+    # Worktree helper: ensures branch+worktree exist in ../worktrees/repo/<dir>, where
+    # <dir> is the branch name's leaf segment (after final /) truncated to 32 chars.
+    # Use via "gwt <branch>" shell fn for auto-cd.
     wt = "!f() { \
         root=$(git rev-parse --show-toplevel) && \
         repo=$(basename \"$root\") && \
@@ -48,15 +50,18 @@
         if [ \"$(basename \"$parent\")\" != \"repos\" ]; then \
             echo \"Error: repo must be inside a \\\"repos\\\" directory\" >&2; exit 1; \
         fi && \
-        target=\"$parent/../worktrees/$repo/$1\" && \
         if [ -z \"$1\" ]; then echo \"Usage: git wt <branch>\" >&2; exit 1; fi && \
+        branch=\"$1\" && \
+        dir=\"${branch##*/}\" && \
+        dir=$(printf '%.32s' \"$dir\") && \
+        target=\"$parent/../worktrees/$repo/$dir\" && \
         if [ -d \"$target\" ]; then echo \"$target\"; exit 0; fi && \
         mkdir -p \"$(dirname \"$target\")\" && \
-        if git show-ref --verify --quiet \"refs/heads/$1\" || \
-           git show-ref --verify --quiet \"refs/remotes/origin/$1\"; then \
-            git worktree add \"$target\" \"$1\" >&2; \
+        if git show-ref --verify --quiet \"refs/heads/$branch\" || \
+           git show-ref --verify --quiet \"refs/remotes/origin/$branch\"; then \
+            git worktree add \"$target\" \"$branch\" >&2; \
         else \
-            git worktree add -b \"$1\" \"$target\" >&2; \
+            git worktree add -b \"$branch\" \"$target\" >&2; \
         fi && \
         echo \"$target\"; \
     }; f"
