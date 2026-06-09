@@ -228,7 +228,9 @@ _gwtpr() {
 }
 
 # Remove a worktree under ../worktrees/<repo>/. `rmwt <name>` removes that worktree;
-# bare `rmwt` shows a numbered picker. `rmwt --merged` removes every merged, non-dirty
+# bare `rmwt` shows a numbered picker (entries that are dirty/unpushed and so need
+# --force are marked "<n>*)"; enter "<n> --force" to force-remove one of them).
+# `rmwt --merged` removes every merged, non-dirty
 # worktree (prompts for confirmation unless -y is given). Works from the main repo or
 # from inside a worktree; when run inside a worktree the picker lists "current (<name>)"
 # first and selecting it cd's back to the main repo before removing. Refuses if dirty or
@@ -319,20 +321,37 @@ rmwt() {
       wts=($all)
     fi
     echo "Available worktrees for $repo:"
-    local merged_set i
+    local merged_set i st marker any_star=0
     merged_set=$(_wt_merged_set "$wt_dir" $wts)
     for i in {1..${#wts[@]}}; do
-      if [[ "${wts[$i]}" == "$cur_wt" ]]; then
-        echo "  $i) current (${wts[$i]})$(_wt_status "$wt_dir/${wts[$i]}" "$merged_set")"
+      st=$(_wt_status "$wt_dir/${wts[$i]}" "$merged_set")
+      # mark entries that would be refused without --force (dirty or unpushed)
+      if [[ "$st" == *"[dirty]"* || "$st" == *"[unpushed]"* ]]; then
+        marker="*"; any_star=1
       else
-        echo "  $i) ${wts[$i]}$(_wt_status "$wt_dir/${wts[$i]}" "$merged_set")"
+        marker=""
+      fi
+      if [[ "${wts[$i]}" == "$cur_wt" ]]; then
+        echo "  $i$marker) current (${wts[$i]})$st"
+      else
+        echo "  $i$marker) ${wts[$i]}$st"
       fi
     done
-    local choice
-    echo -n "Select worktree to remove: "
+    local choice prompt="Select worktree to remove: "
+    (( any_star )) && prompt="Select worktree to remove (use --force for * entries): "
+    echo -n "$prompt"
     read choice
-    if [[ "$choice" =~ ^[0-9]+$ ]] && (( choice >= 1 && choice <= ${#wts[@]} )); then
-      name="${wts[$choice]}"
+    # accept "<n>" or "<n> --force"/"<n> -f" to force-remove an unpushed/dirty entry
+    local -a parts
+    parts=(${=choice})
+    if (( ${#parts} >= 2 )); then
+      if [[ ${#parts} -gt 2 || ( "${parts[2]}" != "--force" && "${parts[2]}" != "-f" ) ]]; then
+        echo "Invalid selection" >&2; return 1
+      fi
+      force=1
+    fi
+    if [[ "${parts[1]}" =~ ^[0-9]+$ ]] && (( parts[1] >= 1 && parts[1] <= ${#wts[@]} )); then
+      name="${wts[${parts[1]}]}"
     else
       echo "Invalid selection" >&2; return 1
     fi
