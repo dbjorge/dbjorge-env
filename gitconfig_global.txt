@@ -42,6 +42,9 @@
     unstage = reset --
     # Worktree helper: ensures branch+worktree exist in ../worktrees/repo/<dir>, where
     # <dir> is the branch name's leaf segment (after final /) truncated to 32 chars.
+    # New branches get their upstream preconfigured as origin/<branch> (even before it
+    # exists remotely) so a plain "git push" from the worktree works without -u, which
+    # would otherwise need to write the sandbox-protected main-repo .git/config.
     # Use via "gwt <branch>" shell fn for auto-cd.
     wt = "!f() { \
         root=$(git rev-parse --show-toplevel) && \
@@ -61,7 +64,9 @@
            git show-ref --verify --quiet \"refs/remotes/origin/$branch\"; then \
             git worktree add \"$target\" \"$branch\" >&2; \
         else \
-            git worktree add -b \"$branch\" \"$target\" >&2; \
+            git worktree add -b \"$branch\" \"$target\" >&2 && \
+            git config \"branch.$branch.remote\" origin && \
+            git config \"branch.$branch.merge\" \"refs/heads/$branch\"; \
         fi && \
         echo \"$target\"; \
     }; f"
