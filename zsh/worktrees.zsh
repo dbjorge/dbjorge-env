@@ -3,7 +3,29 @@
 #   gwt    create/switch worktrees (numbered picker with no args)
 #   gwtpr  create a worktree for a GitHub PR
 #   rmwt   remove a worktree (picker, or --merged batch)
+#   claude launcher wrapper; in a worktree, grants the main-repo .git as
+#          sandbox-writable so `git add`/`git commit` work there
 # Sourced from .zshrc after compinit, which the compdef calls at the bottom need.
+
+# Wrap the `claude` launcher so that, inside a git worktree, the worktree's
+# main-repo .git (which lives outside the worktree dir, under ~/repos/<repo>/.git)
+# is granted as a sandbox-writable path for that session — letting sandboxed
+# `git add`/`git commit` work in the worktree. Only that one repo's .git is
+# granted, passed as a per-launch `--settings` arg (merged with your normal
+# settings; nothing is persisted to disk). No-op outside a worktree: a normal
+# ~/repos/<repo> checkout already has its .git under the writable project root.
+# `command claude` calls the real binary, so the function doesn't recurse.
+# Requires git >= 2.31 (--path-format) and jq.
+claude() {
+  local common gitdir args=()
+  common=$(command git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)
+  gitdir=$(command git rev-parse --path-format=absolute --git-dir 2>/dev/null)
+  if [[ -n "$common" && "$common" != "$gitdir" ]]; then
+    args=(--settings "$(jq -nc --arg p "${common%/}/" \
+      '{sandbox:{filesystem:{allowWrite:[$p]}}}')")
+  fi
+  command claude "${args[@]}" "$@"
+}
 
 # cd to the original repo root (~/repos/<repo>) from a repo or worktree
 gr() {
