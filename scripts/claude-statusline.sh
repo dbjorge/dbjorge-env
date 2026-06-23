@@ -1,5 +1,23 @@
 #!/usr/bin/env bash
 input=$(cat)
+# Archelon/usage sidecar: tee the subscription rate-limit windows to a
+# generically-named cache other tools can read. Additive; does not affect the
+# statusline output below. Only written when rate_limits is present (subscriber
+# after first API response). Atomic (temp + mv) so readers never see a partial.
+if echo "$input" | jq -e 'has("rate_limits") and (.rate_limits != null)' >/dev/null 2>&1; then
+  __now_epoch=$(date +%s)
+  __sidecar="$HOME/.claude/rate-limit-usage.json"
+  __tmp="$HOME/.claude/.rate-limit-usage.json.$$"
+  if echo "$input" | jq -c --argjson now "$__now_epoch" '
+        def win: if . == null then null else {used_percentage, resets_at} end;
+        { captured_at: $now,
+          five_hour: (.rate_limits.five_hour // null | win),
+          seven_day: (.rate_limits.seven_day // null | win) }' > "$__tmp" 2>/dev/null; then
+    mv -f "$__tmp" "$__sidecar"
+  else
+    rm -f "$__tmp"
+  fi
+fi
 model=$(echo "$input" | jq -r '.model.display_name // .model.id // "unknown"' | sed 's/ (1M context)//')
 cwd=$(echo "$input" | jq -r '.cwd // .workspace.current_dir // "unknown"' | sed "s|/Users/danbjorge|~|")
 used=$(echo "$input" | jq -r '
