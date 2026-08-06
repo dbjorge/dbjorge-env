@@ -131,6 +131,40 @@ _wt_merged_set() {
   _wt_merged_branches "$wt_dir/${names[1]}" $branches
 }
 
+# Where trashed worktrees are parked, given a worktrees parent dir ($1 = <root>/worktrees/<repo>).
+# Deliberately a sibling of the worktrees themselves so the rename in _wt_trash is always
+# within one filesystem; across a mount boundary mv degrades to a copy, which is the exact
+# cost we're avoiding. Shared across repos, so one sweep drains all of them.
+_wt_trash_dir() { print -r -- "${${1:A}:h}/.trash" }
+
+# Park worktree $1 in trash dir $2 instead of deleting it, and leave git's registration for
+# the caller to `git worktree prune`. Removing a worktree is dominated by unlinking its
+# dependency tree — ~136k files and ~15s for a walnut checkout — while renaming it takes
+# ~25ms, so the delete can happen after rmwt has returned. Assumes the caller has already
+# done its own dirty/unpushed checks. Returns nonzero WITHOUT touching anything when the
+# fast path doesn't apply, so the caller can fall back to `git worktree remove`.
+_wt_trash() {
+  local target="${1:A}" trash="$2" line cur=""
+  # `git worktree remove` refuses locked worktrees and ones with populated submodules;
+  # rather than reimplement either refusal, hand those cases back to it.
+  [[ -e "$target/.gitmodules" ]] && return 1
+  while IFS= read -r line; do
+    [[ "$line" == worktree\ * ]] && cur="${${line#worktree }:A}"
+    [[ "$line" == locked* && "$cur" == "$target" ]] && return 1
+  done < <(git -C "$target" worktree list --porcelain 2>/dev/null)
+  mkdir -p "$trash" 2>/dev/null || return 1
+  mv -- "$target" "$trash/${target:t}.$$.$RANDOM" 2>/dev/null
+}
+
+# Delete everything parked in trash dir $1, detached so it outlives this command. Whatever a
+# killed purge leaves behind is picked up by the next call, so the trash is self-healing.
+_wt_purge() {
+  local -a stale
+  stale=("$1"/*(ND))
+  (( ${#stale} )) || return 0
+  rm -rf -- $stale >/dev/null 2>&1 &!
+}
+
 # git worktree wrapper - creates worktree + branch if needed, then cd's into it
 # with no args: cd to worktree root (if in a worktree) or prompt for a worktree name
 gwt() {
@@ -257,6 +291,8 @@ _gwtpr() {
 # from inside a worktree; when run inside a worktree the picker lists "current (<name>)"
 # first and selecting it cd's back to the main repo before removing. Refuses if dirty or
 # has unpushed commits (no upstream counts as unpushed) unless --force/-f is passed.
+# Returns as soon as the worktrees are unregistered; their files are unlinked by a detached
+# background purge (see _wt_trash).
 rmwt() {
   local force=0 merged=0 assume_yes=0
   while [[ "$1" == -* ]]; do
@@ -312,17 +348,23 @@ rmwt() {
     fi
     local -a rm_args
     (( force )) && rm_args+=(--force)
-    local failed=0
+    local failed=0 trashed=0 trash
+    trash=$(_wt_trash_dir "$wt_dir")
     for w in $candidates; do
       if [[ "$w" == "$cur_wt" ]]; then
         cd "$main_repo_dir" || { echo "Failed to cd to main repo dir $main_repo_dir" >&2; return 1; }
       fi
-      if git worktree remove "${rm_args[@]}" "$wt_dir/$w"; then
+      if _wt_trash "$wt_dir/$w" "$trash"; then
+        trashed=1
+        echo "Removed worktree $wt_dir/$w"
+      elif git worktree remove "${rm_args[@]}" "$wt_dir/$w"; then
         echo "Removed worktree $wt_dir/$w"
       else
         echo "Failed to remove $wt_dir/$w" >&2; failed=1
       fi
     done
+    (( trashed )) && git -C "$main_repo_dir" worktree prune
+    _wt_purge "$trash"
     return $failed
   fi
   local name
@@ -402,9 +444,16 @@ rmwt() {
   if [[ "$name" == "$cur_wt" ]]; then
     cd "$main_repo_dir" || { echo "Failed to cd to main repo dir $main_repo_dir" >&2; return 1; }
   fi
-  local -a remove_args
-  (( force )) && remove_args+=(--force)
-  git worktree remove "${remove_args[@]}" "$target" || return 1
+  local trash
+  trash=$(_wt_trash_dir "$wt_dir")
+  if _wt_trash "$target" "$trash"; then
+    git -C "$main_repo_dir" worktree prune
+  else
+    local -a remove_args
+    (( force )) && remove_args+=(--force)
+    git worktree remove "${remove_args[@]}" "$target" || return 1
+  fi
+  _wt_purge "$trash"
   echo "Removed worktree $target"
 }
 _rmwt() { _gwt }
