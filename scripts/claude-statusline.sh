@@ -19,6 +19,8 @@ if echo "$input" | jq -e 'has("rate_limits") and (.rate_limits != null)' >/dev/n
   fi
 fi
 model=$(echo "$input" | jq -r '.model.display_name // .model.id // "unknown"' | sed 's/ (1M context)//')
+effort=$(echo "$input" | jq -r '.effort.level // empty')
+[ -n "$effort" ] && model="$model $effort"
 cwd=$(echo "$input" | jq -r '.cwd // .workspace.current_dir // "unknown"' | sed "s|/Users/danbjorge|~|")
 used=$(echo "$input" | jq -r '
   if .context_window.current_usage == null then empty
