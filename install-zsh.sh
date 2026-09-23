@@ -86,7 +86,22 @@ if [[ ! -e "$CLAUDE_SKILLS_LINK" ]]; then
     ln -s "$SKILLS_DIR" "$CLAUDE_SKILLS_LINK"
 fi
 
+# Configure Herdr config symlink
+HERDR_CONFIG_IMPL="$SCRIPT_DIR/.config/herdr/config.toml"
+HERDR_CONFIG_LINK="$HOME/.config/herdr/config.toml"
+mkdir -p "$(dirname "$HERDR_CONFIG_LINK")"
+if [[ -L "$HERDR_CONFIG_LINK" ]]; then
+    # Remove existing symlink so we can update it
+    rm "$HERDR_CONFIG_LINK"
+elif [[ -e "$HERDR_CONFIG_LINK" ]]; then
+    echo "Warning: $HERDR_CONFIG_LINK exists and is not a symlink, skipping"
+fi
+if [[ ! -e "$HERDR_CONFIG_LINK" ]]; then
+    ln -s "$HERDR_CONFIG_IMPL" "$HERDR_CONFIG_LINK"
+fi
+
 echo "Installation complete!"
 echo "Zsh profile configured to source: $ZSHRC_IMPL"
 echo "Git config configured with profile: $GIT_PROFILE"
 echo "Claude Code skills linked: $CLAUDE_SKILLS_LINK -> $SKILLS_DIR"
+echo "Herdr config linked: $HERDR_CONFIG_LINK -> $HERDR_CONFIG_IMPL"

@@ -235,6 +235,89 @@ else
 fi
 rm -rf "$root"
 
+# --- Herdr registration -----------------------------------------------------------------
+
+# Build a fake `herdr` in $1 that appends its argv to $1/calls.log, and answers
+# `worktree list` with a record claiming $2 is open as workspace w7.
+make_fake_herdr() {
+    local dir="$1" wt_path="$2"
+    cat > "$dir/herdr" <<EOF
+#!/bin/bash
+echo "\$*" >> "$dir/calls.log"
+if [ "\$1" = "worktree" ] && [ "\$2" = "list" ]; then
+  printf '%s' '{"result":{"worktrees":[{"path":"$wt_path","open_workspace_id":"w7"}]}}'
+fi
+exit 0
+EOF
+    chmod +x "$dir/herdr"
+}
+
+# gwt <branch> inside Herdr registers the new checkout
+root=$(make_fixture demo)
+fake=$(mktemp -d "${TMPDIR:-/tmp}/wt-fake.XXXXXX")
+make_fake_herdr "$fake" "unused"
+run_zsh "$root/repos/demo" "HERDR_ENV=1 HERDR_BIN_PATH='$fake/herdr' gwt feature-new" >/dev/null
+calls=$(cat "$fake/calls.log" 2>/dev/null)
+
+if echo "$calls" | grep -q "worktree open --cwd .*repos/demo --path .*feature-new --focus"; then
+    pass "gwt inside Herdr registers the checkout with worktree open"
+else
+    fail "gwt inside Herdr registers the checkout with worktree open" "$calls"
+fi
+rm -rf "$root" "$fake"
+
+# gwt <branch> outside Herdr must not shell out to herdr at all
+root=$(make_fixture demo)
+fake=$(mktemp -d "${TMPDIR:-/tmp}/wt-fake.XXXXXX")
+make_fake_herdr "$fake" "unused"
+# HERDR_ENV is cleared explicitly: the suite itself may be running inside a Herdr pane,
+# and zsh -f still inherits the exported environment.
+run_zsh "$root/repos/demo" "HERDR_ENV= HERDR_BIN_PATH='$fake/herdr' gwt feature-new" >/dev/null
+
+if [[ ! -e "$fake/calls.log" ]]; then
+    pass "gwt outside Herdr does not call herdr"
+else
+    fail "gwt outside Herdr does not call herdr" "$(cat "$fake/calls.log")"
+fi
+rm -rf "$root" "$fake"
+
+# gwtpr inside Herdr registers the checkout it creates for the PR
+root=$(make_fixture demo)
+fake=$(mktemp -d "${TMPDIR:-/tmp}/wt-fake.XXXXXX")
+make_fake_herdr "$fake" "unused"
+run_zsh "$root/repos/demo" "
+    gh() {
+        case \"\$1 \$2\" in
+            'pr view') echo 'feature/from-pr' ;;
+            'pr checkout') return 0 ;;
+        esac
+    }
+    HERDR_ENV=1 HERDR_BIN_PATH='$fake/herdr' gwtpr 42
+" >/dev/null
+calls=$(cat "$fake/calls.log" 2>/dev/null)
+
+if echo "$calls" | grep -q "worktree open --cwd .*repos/demo --path .*from-pr --focus"; then
+    pass "gwtpr inside Herdr registers the checkout with worktree open"
+else
+    fail "gwtpr inside Herdr registers the checkout with worktree open" "$calls"
+fi
+rm -rf "$root" "$fake"
+
+# rmwt closes the Herdr workspace before trashing the checkout, since Herdr
+# resolves a workspace by path and the rename breaks that match.
+root=$(make_fixture demo feature-a)
+fake=$(mktemp -d "${TMPDIR:-/tmp}/wt-fake.XXXXXX")
+make_fake_herdr "$fake" "$(cd "$root/worktrees/demo/feature-a" && pwd -P)"
+run_zsh "$root/repos/demo" "HERDR_ENV=1 HERDR_BIN_PATH='$fake/herdr' rmwt feature-a" >/dev/null
+calls=$(cat "$fake/calls.log" 2>/dev/null)
+
+if echo "$calls" | grep -q "workspace close w7"; then
+    pass "rmwt inside Herdr closes the worktree's workspace"
+else
+    fail "rmwt inside Herdr closes the worktree's workspace" "$calls"
+fi
+rm -rf "$root" "$fake"
+
 echo
 echo "=========================================="
 echo "Test Summary"

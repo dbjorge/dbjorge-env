@@ -165,9 +165,35 @@ _wt_purge() {
   rm -rf -- $stale >/dev/null 2>&1 &!
 }
 
+# Register worktree checkout $1 with Herdr, which groups it under the repo's workspace and
+# fires worktree.opened for plugins. Herdr adopts checkouts it did not create, so gwt/gwtpr
+# stay the only things that make worktrees. No-op outside Herdr.
+_wt_herdr_open() {
+  [[ "${HERDR_ENV:-}" == 1 ]] || return 0
+  local common
+  common=$(git -C "$1" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || return 0
+  # --cwd names the repo whose worktrees Herdr searches. Without it Herdr searches the
+  # active workspace, which is the worktree we just entered, and the open fails as
+  # worktree_not_found. The common dir is <repo>/.git even from a linked worktree.
+  "${HERDR_BIN_PATH:-herdr}" worktree open --cwd "${common:h}" --path "$1" --focus >/dev/null 2>&1
+  return 0
+}
+
+# Close the Herdr workspace holding worktree $1 ($2 = the main repo dir). Must run before
+# the checkout moves: Herdr matches a workspace to a worktree by path, so a workspace left
+# open after _wt_trash renames the directory points at nothing.
+_wt_herdr_close() {
+  [[ "${HERDR_ENV:-}" == 1 ]] || return 0
+  local herdr="${HERDR_BIN_PATH:-herdr}" id
+  id=$("$herdr" worktree list --cwd "$2" 2>/dev/null \
+    | jq -r --arg p "${1:A}" '.result.worktrees[]? | select(.path == $p) | .open_workspace_id // empty' 2>/dev/null)
+  [[ -n "$id" ]] && "$herdr" workspace close "$id" >/dev/null 2>&1
+  return 0
+}
+
 # git worktree wrapper - creates worktree + branch if needed, then cd's into it
 # with no args: cd to worktree root (if in a worktree) or prompt for a worktree name
-gwt() {
+_wt_gwt() {
   if [[ $# -eq 0 ]]; then
     local root parent
     root=$(git rev-parse --show-toplevel 2>/dev/null) || { echo "Not in a git repo" >&2; return 1; }
@@ -203,6 +229,7 @@ gwt() {
     cd "$target"
   fi
 }
+gwt() { _wt_gwt "$@" && _wt_herdr_open "$PWD" }
 _gwt() {
   local root repo parent wt_dir
   root=$(git rev-parse --show-toplevel 2>/dev/null) || return
@@ -219,7 +246,7 @@ _gwt() {
 # (detached) where <dir> is the head branch's leaf segment truncated to 32 chars,
 # cd's in, and runs `gh pr checkout` so the branch is set up correctly (handles
 # forks). If the worktree already exists and is dirty, bails without cd.
-gwtpr() {
+_wt_gwtpr() {
   local pr
   if [[ $# -eq 0 ]]; then
     local pr_list_output
@@ -275,6 +302,7 @@ gwtpr() {
   fi
   gh pr checkout "$pr"
 }
+gwtpr() { _wt_gwtpr "$@" && _wt_herdr_open "$PWD" }
 _gwtpr() {
   local -a prs
   prs=("${(@f)$(gh pr list --limit 30 --json number,title -q '.[] | "\(.number):\(.title)"' 2>/dev/null)}")
@@ -354,6 +382,7 @@ rmwt() {
       if [[ "$w" == "$cur_wt" ]]; then
         cd "$main_repo_dir" || { echo "Failed to cd to main repo dir $main_repo_dir" >&2; return 1; }
       fi
+      _wt_herdr_close "$wt_dir/$w" "$main_repo_dir"
       if _wt_trash "$wt_dir/$w" "$trash"; then
         trashed=1
         echo "Removed worktree $wt_dir/$w"
@@ -444,6 +473,7 @@ rmwt() {
   if [[ "$name" == "$cur_wt" ]]; then
     cd "$main_repo_dir" || { echo "Failed to cd to main repo dir $main_repo_dir" >&2; return 1; }
   fi
+  _wt_herdr_close "$target" "$main_repo_dir"
   local trash
   trash=$(_wt_trash_dir "$wt_dir")
   if _wt_trash "$target" "$trash"; then
