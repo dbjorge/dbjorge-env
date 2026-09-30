@@ -5,6 +5,9 @@
 
 IMPL_SCRIPT="$(dirname "$0")/../repeat.sh"
 
+TEST_TMPDIR=$(mktemp -d "${TMPDIR:-/tmp}/repeat-test.XXXXXX")
+trap 'rm -rf "$TEST_TMPDIR"' EXIT
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -118,7 +121,7 @@ run_test "Command with spaces and special chars" 0 \
 
 # Test 14: Command that fails on iterations 2 and 3, succeeds on 1 and 4
 run_test "Continue through failures with continue-on-error" 1 \
-    "$IMPL_SCRIPT --continue-on-error 4 'count=\$(cat /tmp/repeat_test_counter.txt 2>/dev/null || echo 0); count=\$((count + 1)); echo \$count > /tmp/repeat_test_counter.txt; if [ \$count -eq 2 ] || [ \$count -eq 3 ]; then echo \"Iteration \$count: failing\"; false; else echo \"Iteration \$count: success\"; fi' && rm -f /tmp/repeat_test_counter.txt"
+    "$IMPL_SCRIPT --continue-on-error 4 'count=\$(cat $TEST_TMPDIR/repeat_test_counter.txt 2>/dev/null || echo 0); count=\$((count + 1)); echo \$count > $TEST_TMPDIR/repeat_test_counter.txt; if [ \$count -eq 2 ] || [ \$count -eq 3 ]; then echo \"Iteration \$count: failing\"; false; else echo \"Iteration \$count: success\"; fi'"
 
 # Test 15: Very fast command (testing timing precision)
 run_test "Very fast command" 0 \
@@ -126,7 +129,7 @@ run_test "Very fast command" 0 \
 
 # Test 16: Command with output redirection
 run_test "Command with output redirection" 0 \
-    "$IMPL_SCRIPT 2 'echo redirected > /tmp/repeat_test_output.txt && cat /tmp/repeat_test_output.txt'"
+    "$IMPL_SCRIPT 2 'echo redirected > $TEST_TMPDIR/repeat_test_output.txt && cat $TEST_TMPDIR/repeat_test_output.txt'"
 
 # Test 17: Command that uses environment variables
 run_test "Command with environment variables" 0 \
@@ -138,14 +141,11 @@ run_test "Command with pipes" 0 \
 
 # Test 19: Command that creates files
 run_test "Command that creates files" 0 \
-    "$IMPL_SCRIPT 2 'echo run_\$RANDOM > /tmp/repeat_test_\$RANDOM.txt'"
+    "$IMPL_SCRIPT 2 'echo run_\$RANDOM > $TEST_TMPDIR/repeat_test_\$RANDOM.txt'"
 
 # Test 20: Command with complex logic
 run_test "Complex command logic" 0 \
     "$IMPL_SCRIPT 3 'for i in 1 2 3; do echo \"Iteration \$i\"; done'"
-
-# Clean up any test files
-rm -f /tmp/repeat_test_output.txt /tmp/repeat_test_*.txt
 
 echo
 echo "=========================================="
