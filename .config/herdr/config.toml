@@ -9,3 +9,18 @@ directory = "~/worktrees"
 
 [ui]
 tab_bar_right = [{ type = "command", command = 'bash "$HOME/repos/dbjorge-env/scripts/claude-usage-status.sh"', interval_seconds = 5, timeout_seconds = 2 }]
+
+[terminal]
+new_cwd = "follow"
+
+[keys]
+new_tab = ["prefix+c", "ctrl+t"]
+close_tab = ["prefix+shift+x", "ctrl+w"]
+close_workspace = ["prefix+shift+d", "ctrl+shift+w"]
+
+# Built-in new_workspace follows new_cwd like tabs do; an explicit --cwd overrides it.
+[[keys.command]]
+key = "ctrl+shift+t"
+type = "shell"
+command = "\"$HERDR_BIN_PATH\" workspace create --cwd ~/repos --focus"
+description = "new workspace in ~/repos"

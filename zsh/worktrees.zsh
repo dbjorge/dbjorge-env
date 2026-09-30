@@ -2,6 +2,8 @@
 #   gr     cd to the main repo root from anywhere in a repo or worktree
 #   gwt    create/switch worktrees (numbered picker with no args)
 #   gwtpr  create a worktree for a GitHub PR
+#   hwt, hwtpr  like gwt/gwtpr, but open the worktree as a new Herdr workspace and leave
+#          the calling shell where it was
 #   rmwt   remove a worktree (picker, or --merged batch)
 #   claude launcher wrapper; in a worktree, grants the main-repo .git as
 #          sandbox-writable so `git add`/`git commit` work there
@@ -165,18 +167,21 @@ _wt_purge() {
   rm -rf -- $stale >/dev/null 2>&1 &!
 }
 
-# Register worktree checkout $1 with Herdr, which groups it under the repo's workspace and
-# fires worktree.opened for plugins. Herdr adopts checkouts it did not create, so gwt/gwtpr
-# stay the only things that make worktrees. No-op outside Herdr.
-_wt_herdr_open() {
-  [[ "${HERDR_ENV:-}" == 1 ]] || return 0
-  local common
-  common=$(git -C "$1" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || return 0
-  # --cwd names the repo whose worktrees Herdr searches. Without it Herdr searches the
-  # active workspace, which is the worktree we just entered, and the open fails as
-  # worktree_not_found. The common dir is <repo>/.git even from a linked worktree.
-  "${HERDR_BIN_PATH:-herdr}" worktree open --cwd "${common:h}" --path "$1" --focus >/dev/null 2>&1
-  return 0
+# Run gwt/gwtpr ($1) with the remaining args, then return this shell to where it started
+# and open the resulting worktree as a Herdr workspace under the current one, which fires
+# worktree.opened for plugins. Herdr adopts checkouts it did not create, so gwt/gwtpr stay
+# the only things that make worktrees. If Herdr rejects the open, the shell goes back into
+# the worktree as plain gwt/gwtpr would leave it.
+_wt_herdr_run() {
+  [[ "${HERDR_ENV:-}" == 1 ]] || { echo "${funcstack[2]}: not running inside Herdr" >&2; return 1; }
+  local origin=$PWD target
+  "$@" || return
+  target=$PWD
+  # With --cwd, Herdr can miss this workspace (no cached git metadata) and parent the worktree
+  # elsewhere. With --workspace it reads the repo from the pane's cwd, so cd back out first.
+  cd "$origin"
+  "${HERDR_BIN_PATH:-herdr}" worktree open --workspace "$HERDR_WORKSPACE_ID" --path "$target" --focus >/dev/null \
+    || { echo "Herdr failed to open $target" >&2; cd "$target"; return 1; }
 }
 
 # Close the Herdr workspace holding worktree $1 ($2 = the main repo dir). Must run before
@@ -193,7 +198,7 @@ _wt_herdr_close() {
 
 # git worktree wrapper - creates worktree + branch if needed, then cd's into it
 # with no args: cd to worktree root (if in a worktree) or prompt for a worktree name
-_wt_gwt() {
+gwt() {
   if [[ $# -eq 0 ]]; then
     local root parent
     root=$(git rev-parse --show-toplevel 2>/dev/null) || { echo "Not in a git repo" >&2; return 1; }
@@ -229,7 +234,7 @@ _wt_gwt() {
     cd "$target"
   fi
 }
-gwt() { _wt_gwt "$@" && _wt_herdr_open "$PWD" }
+hwt() { _wt_herdr_run gwt "$@" }
 _gwt() {
   local root repo parent wt_dir
   root=$(git rev-parse --show-toplevel 2>/dev/null) || return
@@ -246,7 +251,7 @@ _gwt() {
 # (detached) where <dir> is the head branch's leaf segment truncated to 32 chars,
 # cd's in, and runs `gh pr checkout` so the branch is set up correctly (handles
 # forks). If the worktree already exists and is dirty, bails without cd.
-_wt_gwtpr() {
+gwtpr() {
   local pr
   if [[ $# -eq 0 ]]; then
     local pr_list_output
@@ -302,7 +307,7 @@ _wt_gwtpr() {
   fi
   gh pr checkout "$pr"
 }
-gwtpr() { _wt_gwtpr "$@" && _wt_herdr_open "$PWD" }
+hwtpr() { _wt_herdr_run gwtpr "$@" }
 _gwtpr() {
   local -a prs
   prs=("${(@f)$(gh pr list --limit 30 --json number,title -q '.[] | "\(.number):\(.title)"' 2>/dev/null)}")
@@ -490,4 +495,6 @@ _rmwt() { _gwt }
 
 compdef _gwt gwt
 compdef _gwtpr gwtpr
+compdef _gwt hwt
+compdef _gwtpr hwtpr
 compdef _rmwt rmwt

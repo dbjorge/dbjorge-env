@@ -243,7 +243,7 @@ make_fake_herdr() {
     local dir="$1" wt_path="$2"
     cat > "$dir/herdr" <<EOF
 #!/bin/bash
-echo "\$*" >> "$dir/calls.log"
+echo "\$* (from \$PWD)" >> "$dir/calls.log"
 if [ "\$1" = "worktree" ] && [ "\$2" = "list" ]; then
   printf '%s' '{"result":{"worktrees":[{"path":"$wt_path","open_workspace_id":"w7"}]}}'
 fi
@@ -252,36 +252,54 @@ EOF
     chmod +x "$dir/herdr"
 }
 
-# gwt <branch> inside Herdr registers the new checkout
+# gwt/gwtpr stay plain cd helpers even inside Herdr; hwt/hwtpr are the Herdr variants.
 root=$(make_fixture demo)
 fake=$(mktemp -d "${TMPDIR:-/tmp}/wt-fake.XXXXXX")
 make_fake_herdr "$fake" "unused"
-run_zsh "$root/repos/demo" "HERDR_ENV=1 HERDR_BIN_PATH='$fake/herdr' gwt feature-new" >/dev/null
-calls=$(cat "$fake/calls.log" 2>/dev/null)
+out=$(run_zsh "$root/repos/demo" "HERDR_ENV=1 HERDR_BIN_PATH='$fake/herdr' gwt feature-new >/dev/null; echo \"PWD=\$PWD\"")
 
-if echo "$calls" | grep -q "worktree open --cwd .*repos/demo --path .*feature-new --focus"; then
-    pass "gwt inside Herdr registers the checkout with worktree open"
+if [[ ! -e "$fake/calls.log" ]] && echo "$out" | grep -q "^PWD=.*worktrees/demo/feature-new$"; then
+    pass "gwt inside Herdr cd's into the worktree without calling herdr"
 else
-    fail "gwt inside Herdr registers the checkout with worktree open" "$calls"
+    fail "gwt inside Herdr cd's into the worktree without calling herdr" "$out
+$(cat "$fake/calls.log" 2>/dev/null)"
 fi
 rm -rf "$root" "$fake"
 
-# gwt <branch> outside Herdr must not shell out to herdr at all
+# hwt <branch> opens the checkout as a Herdr workspace and leaves the calling shell alone
+root=$(make_fixture demo)
+fake=$(mktemp -d "${TMPDIR:-/tmp}/wt-fake.XXXXXX")
+make_fake_herdr "$fake" "unused"
+out=$(run_zsh "$root/repos/demo" "HERDR_ENV=1 HERDR_WORKSPACE_ID=w3 HERDR_BIN_PATH='$fake/herdr' hwt feature-new >/dev/null; echo \"PWD=\$PWD\"")
+calls=$(cat "$fake/calls.log" 2>/dev/null)
+
+# Herdr derives the parent workspace's repo from its pane cwd, so the open must happen
+# after the shell is back in the repo, not while it is still inside the new worktree.
+if echo "$calls" | grep -q "worktree open --workspace w3 --path .*worktrees/demo/feature-new --focus (from .*repos/demo)" \
+    && echo "$out" | grep -q "^PWD=.*repos/demo$"; then
+    pass "hwt opens the worktree under the current Herdr workspace and stays in the original dir"
+else
+    fail "hwt opens the worktree under the current Herdr workspace and stays in the original dir" "$out
+$calls"
+fi
+rm -rf "$root" "$fake"
+
+# hwt outside Herdr refuses before creating anything
 root=$(make_fixture demo)
 fake=$(mktemp -d "${TMPDIR:-/tmp}/wt-fake.XXXXXX")
 make_fake_herdr "$fake" "unused"
 # HERDR_ENV is cleared explicitly: the suite itself may be running inside a Herdr pane,
 # and zsh -f still inherits the exported environment.
-run_zsh "$root/repos/demo" "HERDR_ENV= HERDR_BIN_PATH='$fake/herdr' gwt feature-new" >/dev/null
+run_zsh "$root/repos/demo" "HERDR_ENV= HERDR_BIN_PATH='$fake/herdr' hwt feature-new" >/dev/null
 
-if [[ ! -e "$fake/calls.log" ]]; then
-    pass "gwt outside Herdr does not call herdr"
+if [[ ! -e "$fake/calls.log" && ! -e "$root/worktrees/demo/feature-new" ]]; then
+    pass "hwt outside Herdr does nothing"
 else
-    fail "gwt outside Herdr does not call herdr" "$(cat "$fake/calls.log")"
+    fail "hwt outside Herdr does nothing" "$(ls "$root/worktrees/demo")"
 fi
 rm -rf "$root" "$fake"
 
-# gwtpr inside Herdr registers the checkout it creates for the PR
+# gwtpr inside Herdr does not call herdr
 root=$(make_fixture demo)
 fake=$(mktemp -d "${TMPDIR:-/tmp}/wt-fake.XXXXXX")
 make_fake_herdr "$fake" "unused"
@@ -294,12 +312,37 @@ run_zsh "$root/repos/demo" "
     }
     HERDR_ENV=1 HERDR_BIN_PATH='$fake/herdr' gwtpr 42
 " >/dev/null
+
+if [[ ! -e "$fake/calls.log" ]]; then
+    pass "gwtpr inside Herdr does not call herdr"
+else
+    fail "gwtpr inside Herdr does not call herdr" "$(cat "$fake/calls.log")"
+fi
+rm -rf "$root" "$fake"
+
+# hwtpr opens the PR checkout in Herdr, after gh has checked it out, and stays put
+root=$(make_fixture demo)
+fake=$(mktemp -d "${TMPDIR:-/tmp}/wt-fake.XXXXXX")
+make_fake_herdr "$fake" "unused"
+out=$(run_zsh "$root/repos/demo" "
+    gh() {
+        case \"\$1 \$2\" in
+            'pr view') echo 'feature/from-pr' ;;
+            'pr checkout') echo \"checkout in \$PWD\" >> '$fake/calls.log' ;;
+        esac
+    }
+    HERDR_ENV=1 HERDR_WORKSPACE_ID=w3 HERDR_BIN_PATH='$fake/herdr' hwtpr 42 >/dev/null
+    echo \"PWD=\$PWD\"
+")
 calls=$(cat "$fake/calls.log" 2>/dev/null)
 
-if echo "$calls" | grep -q "worktree open --cwd .*repos/demo --path .*from-pr --focus"; then
-    pass "gwtpr inside Herdr registers the checkout with worktree open"
+if echo "$calls" | grep -q "^checkout in .*worktrees/demo/from-pr$" \
+    && echo "$calls" | grep -q "worktree open --workspace w3 --path .*from-pr --focus (from .*repos/demo)" \
+    && echo "$out" | grep -q "^PWD=.*repos/demo$"; then
+    pass "hwtpr opens the PR worktree under the current Herdr workspace and stays in the original dir"
 else
-    fail "gwtpr inside Herdr registers the checkout with worktree open" "$calls"
+    fail "hwtpr opens the PR worktree under the current Herdr workspace and stays in the original dir" "$out
+$calls"
 fi
 rm -rf "$root" "$fake"
 
