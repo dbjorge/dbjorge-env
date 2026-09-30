@@ -2,6 +2,16 @@
 # Prints a one-line summary of Claude subscription usage for herdr's tab-row
 # status area, from the sidecar that claude-statusline.sh writes. Prints nothing
 # when there is no usable data, which makes herdr hide the entry.
+#
+# Install (needs bash and jq):
+#   1. Have Claude Code write the sidecar: point "statusLine" in
+#      ~/.claude/settings.json at claude-statusline.sh, or copy its sidecar block
+#      (the top of that script) into your own statusline command.
+#   2. Add this script to herdr's tab row in ~/.config/herdr/config.toml (append
+#      to tab_bar_right if you already have one), then run
+#      `herdr server reload-config`:
+#        [ui]
+#        tab_bar_right = [{ type = "command", command = 'bash "/path/to/claude-usage-status.sh"', interval_seconds = 5, timeout_seconds = 2 }]
 usage_file="$HOME/.claude/rate-limit-usage.json"
 [ -r "$usage_file" ] || exit 0
 
