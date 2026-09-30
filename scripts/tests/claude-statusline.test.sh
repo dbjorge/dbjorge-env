@@ -34,6 +34,39 @@ assert_output() {
     fi
 }
 
+# Runs the script under a temp HOME and checks the rate-limit sidecar it leaves.
+# jq_filter must evaluate true against the sidecar; pass "" to require no sidecar.
+assert_sidecar() {
+    local test_name="$1"
+    local input="$2"
+    local jq_filter="$3"
+
+    echo -e "${BLUE}Running test:${NC} $test_name"
+
+    local home
+    home=$(mktemp -d "${TMPDIR:-/tmp}/statusline-test.XXXXXX")
+    mkdir -p "$home/.claude"
+    printf '%s' "$input" | HOME="$home" bash "$IMPL_SCRIPT" >/dev/null
+    local sidecar="$home/.claude/rate-limit-usage.json"
+
+    local ok
+    if [[ -z "$jq_filter" ]]; then
+        [[ ! -e "$sidecar" ]] && ok=1
+    else
+        jq -e "$jq_filter" "$sidecar" >/dev/null 2>&1 && ok=1
+    fi
+
+    if [[ -n "$ok" ]]; then
+        echo -e "${GREEN}✓ PASS${NC}: $test_name"
+        ((tests_passed++))
+    else
+        echo -e "${RED}✗ FAIL${NC}: $test_name"
+        echo "  sidecar: $(cat "$sidecar" 2>/dev/null || echo '(absent)')"
+        ((tests_failed++))
+    fi
+    rm -rf "$home"
+}
+
 # Helper to build a payload with given used token components and total
 mk_payload() {
     local cwd="$1" model="$2" total="$3" input_tokens="$4" cache_creation="$5" cache_read="$6"
@@ -125,6 +158,23 @@ assert_output "leaves non-Opus model names untouched" \
 assert_output "falls back to model.id when display_name absent" \
     "$(printf '{"model":{"id":"claude-haiku-4-5"},"cwd":"/Users/danbjorge","context_window":{"context_window_size":200000,"current_usage":{"input_tokens":0,"cache_creation_input_tokens":0,"cache_read_input_tokens":1000}}}')" \
     "$(printf '\033[38;5;108m')1k$(printf '\033[0m')/200k  ~  claude-haiku-4-5"
+
+assert_output "appends effort level to model name" \
+    '{"model":{"display_name":"Opus 5.5 (1M context)"},"cwd":"/x","effort":{"level":"medium"}}' \
+    "/x  Opus 5.5 medium"
+
+assert_output "omits effort level when absent" \
+    '{"model":{"display_name":"Opus 5.5"},"cwd":"/x"}' \
+    "/x  Opus 5.5"
+
+# --- Rate-limit sidecar ---
+assert_sidecar "writes sidecar when rate_limits present" \
+    '{"model":{"display_name":"Opus"},"cwd":"/x","context_window":{"context_window_size":200000,"current_usage":{"input_tokens":10,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"rate_limits":{"five_hour":{"used_percentage":42,"resets_at":1782170000},"seven_day":{"used_percentage":68,"resets_at":1782400000}}}' \
+    '.five_hour.used_percentage==42 and .five_hour.resets_at==1782170000 and .seven_day.used_percentage==68 and .seven_day.resets_at==1782400000 and (.captured_at|type)=="number"'
+
+assert_sidecar "writes no sidecar when rate_limits absent" \
+    '{"model":{"display_name":"Opus"},"cwd":"/x"}' \
+    ""
 
 # --- Working directory display ---
 # used=1000, total=200000: smart (sage 108) for all three below
