@@ -3,7 +3,8 @@
 # Test script for claude-usage-status.sh
 # Run with: ./claude-usage-status.test.sh
 
-IMPL_SCRIPT="$(cd "$(dirname "$0")/.." && pwd)/claude-usage-status.sh"
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+IMPL_SCRIPT="$REPO_ROOT/scripts/claude-usage-status.sh"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -117,6 +118,22 @@ assert_output "five_hour-only file" "5H █░░░░░░░ 4% 2h48m"
 write_usage "$(window 4 "$FIVE_OFFSET")" "$(window 50 "$SEVEN_OFFSET")"
 actual=$(env -i HOME="$TEST_HOME" /bin/sh -lc "bash '$IMPL_SCRIPT'")
 check "runs under env -i login shell" "5H █░░░░░░░ 4% 2h48m · 7D ████░░░░ 50% 4d3h" "$actual" "$?"
+
+# --- herdr config entry ---
+HERDR_CONFIG="$REPO_ROOT/.config/herdr/config.toml"
+
+config_command=$(sed -n "/^tab_bar_right = /s/.*type = \"command\", command = '\\([^']*\\)'.*/\\1/p" "$HERDR_CONFIG")
+mkdir -p "$TEST_HOME/repos"
+ln -sfn "$REPO_ROOT" "$TEST_HOME/repos/dbjorge-env"
+actual=$(env -i HOME="$TEST_HOME" /bin/sh -lc "$config_command")
+check "herdr tab_bar_right command prints the line" "5H █░░░░░░░ 4% 2h48m · 7D ████░░░░ 50% 4d3h" "$actual" "$?"
+
+if command -v herdr >/dev/null; then
+    actual=$(HERDR_CONFIG_PATH="$HERDR_CONFIG" herdr config check 2>&1)
+    check "herdr config check accepts the config" "config: ok" "$actual" "$?"
+else
+    echo "Skipping herdr config check: herdr is not installed"
+fi
 
 echo
 echo "=========================================="
