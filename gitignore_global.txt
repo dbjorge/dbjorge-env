@@ -4,5 +4,6 @@
 **/.claude/settings.local.json
 **/.DS_STORE
 **/.idea/
+**/.local/
 **/.plans/
 **/.superpowers/
