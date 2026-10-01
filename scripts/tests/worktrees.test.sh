@@ -7,8 +7,11 @@ REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 WORKTREES_ZSH="$REPO_ROOT/zsh/worktrees.zsh"
 
 # gwt shells out to the `git wt` alias; layer this checkout's definition over whatever
-# version is installed globally so the suite tests the code under review.
-export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=include.path GIT_CONFIG_VALUE_0="$REPO_ROOT/gitconfig_global.txt"
+# version is installed globally so the suite tests the code under review. That file also
+# turns on commit.gpgsign, which fails for fixture commits wherever no key is available (CI).
+export GIT_CONFIG_COUNT=2 \
+    GIT_CONFIG_KEY_0=include.path GIT_CONFIG_VALUE_0="$REPO_ROOT/gitconfig_global.txt" \
+    GIT_CONFIG_KEY_1=commit.gpgsign GIT_CONFIG_VALUE_1=false
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
