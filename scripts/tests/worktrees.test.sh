@@ -3,7 +3,12 @@
 # Test script for zsh/worktrees.zsh (rmwt removal paths)
 # Run with: ./worktrees.test.sh
 
-WORKTREES_ZSH="$(cd "$(dirname "$0")/../.." && pwd)/zsh/worktrees.zsh"
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+WORKTREES_ZSH="$REPO_ROOT/zsh/worktrees.zsh"
+
+# gwt shells out to the `git wt` alias; layer this checkout's definition over whatever
+# version is installed globally so the suite tests the code under review.
+export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=include.path GIT_CONFIG_VALUE_0="$REPO_ROOT/gitconfig_global.txt"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -235,6 +240,122 @@ else
 fi
 rm -rf "$root"
 
+# --- gwt --from ------------------------------------------------------------------------
+
+# Fixture with a "base" branch one commit ahead of main, so a worktree's starting point
+# is distinguishable.
+make_from_fixture() {
+    local root
+    root=$(make_fixture demo)
+    git -C "$root/repos/demo" branch -q base main
+    git -C "$root/repos/demo" -c user.email=t@t -c user.name=t commit -q --allow-empty -m on-main
+    local wt
+    wt=$(mktemp -d "${TMPDIR:-/tmp}/wt-base.XXXXXX")
+    rmdir "$wt"
+    git -C "$root/repos/demo" worktree add -q "$wt" base
+    git -C "$wt" -c user.email=t@t -c user.name=t commit -q --allow-empty -m on-base
+    git -C "$root/repos/demo" worktree remove "$wt"
+    echo "$root"
+}
+
+root=$(make_from_fixture)
+out=$(run_zsh "$root/repos/demo" "gwt feature-new --from base >/dev/null; echo \"PWD=\$PWD\"")
+if echo "$out" | grep -q "^PWD=.*worktrees/demo/feature-new$" \
+    && [[ "$(git -C "$root/worktrees/demo/feature-new" rev-parse HEAD 2>/dev/null)" == "$(git -C "$root/repos/demo" rev-parse base)" ]]; then
+    pass "gwt <branch> --from <base> branches the new worktree off <base>"
+else
+    fail "gwt <branch> --from <base> branches the new worktree off <base>" "$out"
+fi
+upstream="$(git -C "$root/repos/demo" config branch.feature-new.remote)/$(git -C "$root/repos/demo" config branch.feature-new.merge)"
+if [[ "$upstream" == "origin/refs/heads/feature-new" ]]; then
+    pass "gwt --from still preconfigures origin/<branch> as the upstream"
+else
+    fail "gwt --from still preconfigures origin/<branch> as the upstream" "$upstream"
+fi
+rm -rf "$root"
+
+root=$(make_from_fixture)
+out=$(run_zsh "$root/repos/demo" "gwt --from base feature-new >/dev/null; echo \"PWD=\$PWD\"")
+if echo "$out" | grep -q "^PWD=.*worktrees/demo/feature-new$" \
+    && [[ "$(git -C "$root/worktrees/demo/feature-new" rev-parse HEAD 2>/dev/null)" == "$(git -C "$root/repos/demo" rev-parse base)" ]]; then
+    pass "gwt --from <base> <branch> accepts --from before the branch"
+else
+    fail "gwt --from <base> <branch> accepts --from before the branch" "$out"
+fi
+rm -rf "$root"
+
+root=$(make_from_fixture)
+git -C "$root/repos/demo" branch -q existing main
+out=$(run_zsh "$root/repos/demo" "gwt existing --from base; echo \"rc=\$?\"")
+if echo "$out" | grep -q "^rc=1$" && [[ ! -e "$root/worktrees/demo/existing" ]]; then
+    pass "gwt --from refuses a branch that already exists"
+else
+    fail "gwt --from refuses a branch that already exists" "$out"
+fi
+rm -rf "$root"
+
+root=$(make_from_fixture)
+out=$(run_zsh "$root/repos/demo" "gwt feature-new --from no-such-ref; echo \"rc=\$?\"")
+if echo "$out" | grep -q "^rc=1$" && [[ ! -e "$root/worktrees/demo/feature-new" ]] \
+    && ! git -C "$root/repos/demo" show-ref --verify --quiet refs/heads/feature-new; then
+    pass "gwt --from an unknown ref creates nothing"
+else
+    fail "gwt --from an unknown ref creates nothing" "$out"
+fi
+rm -rf "$root"
+
+root=$(make_from_fixture)
+out=$(run_zsh "$root/repos/demo" "gwt feature-new --from; echo \"rc=\$?\"")
+if echo "$out" | grep -q "^rc=1$" && [[ ! -e "$root/worktrees/demo/feature-new" ]]; then
+    pass "gwt --from with no value is a usage error"
+else
+    fail "gwt --from with no value is a usage error" "$out"
+fi
+rm -rf "$root"
+
+# --- completion -------------------------------------------------------------------------
+
+# Run completion function $2 from $1 with the command line $3.. (the last word is the one
+# being completed), printing the candidates it offers. compadd is stubbed to print what
+# follows "--".
+complete_in() {
+    local cwd="$1" fn="$2"; shift 2
+    local w quoted=""
+    for w in "$@"; do quoted+=" '$w'"; done
+    run_zsh "$cwd" "
+        compadd() { while [[ \$# -gt 0 && \$1 != -- ]]; do shift; done; shift; print -l -- \"\$@\" }
+        words=($quoted)
+        CURRENT=\${#words}
+        $fn
+    "
+}
+
+root=$(make_from_fixture)
+git -C "$root/repos/demo" fetch -q origin
+git -C "$root/repos/demo" remote set-head origin main
+out=$(complete_in "$root/repos/demo" _gwt gwt feature-new --from "")
+if echo "$out" | grep -qx "base" && echo "$out" | grep -qx "main" && echo "$out" | grep -qx "origin/main" \
+    && ! echo "$out" | grep -qx "origin"; then
+    pass "gwt completes local and remote branch names after --from"
+else
+    fail "gwt completes local and remote branch names after --from" "$out"
+fi
+
+out=$(complete_in "$root/repos/demo" _gwt gwt feature-new --)
+if echo "$out" | grep -qx -- "--from"; then
+    pass "gwt completes the --from flag"
+else
+    fail "gwt completes the --from flag" "$out"
+fi
+
+out=$(complete_in "$root/repos/demo" _rmwt rmwt --)
+if ! echo "$out" | grep -qx -- "--from"; then
+    pass "rmwt does not offer --from"
+else
+    fail "rmwt does not offer --from" "$out"
+fi
+rm -rf "$root"
+
 # --- Herdr registration -----------------------------------------------------------------
 
 # Build a fake `herdr` in $1 that appends its argv to $1/calls.log, and answers
@@ -281,6 +402,19 @@ if echo "$calls" | grep -q "worktree open --workspace w3 --path .*worktrees/demo
 else
     fail "hwt opens the worktree under the current Herdr workspace and stays in the original dir" "$out
 $calls"
+fi
+rm -rf "$root" "$fake"
+
+# hwt forwards --from to gwt
+root=$(make_from_fixture)
+fake=$(mktemp -d "${TMPDIR:-/tmp}/wt-fake.XXXXXX")
+make_fake_herdr "$fake" "unused"
+run_zsh "$root/repos/demo" "HERDR_ENV=1 HERDR_WORKSPACE_ID=w3 HERDR_BIN_PATH='$fake/herdr' hwt feature-new --from base" >/dev/null
+if [[ "$(git -C "$root/worktrees/demo/feature-new" rev-parse HEAD 2>/dev/null)" == "$(git -C "$root/repos/demo" rev-parse base)" ]] \
+    && grep -q "worktree open --workspace w3 --path .*worktrees/demo/feature-new --focus" "$fake/calls.log"; then
+    pass "hwt <branch> --from <base> branches off <base> and opens it in Herdr"
+else
+    fail "hwt <branch> --from <base> branches off <base> and opens it in Herdr" "$(cat "$fake/calls.log" 2>/dev/null)"
 fi
 rm -rf "$root" "$fake"
 

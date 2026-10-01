@@ -45,7 +45,8 @@
     # New branches get their upstream preconfigured as origin/<branch> (even before it
     # exists remotely) so a plain "git push" from the worktree works without -u, which
     # would otherwise need to write the sandbox-protected main-repo .git/config.
-    # Use via "gwt <branch>" shell fn for auto-cd.
+    # --from <ref> starts a new branch at <ref> instead of HEAD (refuses existing branches).
+    # Use via "gwt <branch> [--from <ref>]" shell fn for auto-cd.
     wt = "!f() { \
         root=$(git rev-parse --show-toplevel) && \
         repo=$(basename \"$root\") && \
@@ -53,18 +54,33 @@
         if [ \"$(basename \"$parent\")\" != \"repos\" ]; then \
             echo \"Error: repo must be inside a \\\"repos\\\" directory\" >&2; exit 1; \
         fi && \
-        if [ -z \"$1\" ]; then echo \"Usage: git wt <branch>\" >&2; exit 1; fi && \
-        branch=\"$1\" && \
+        usage=\"Usage: git wt <branch> [--from <ref>]\" && \
+        branch= && from= && \
+        while [ $# -gt 0 ]; do \
+            case \"$1\" in \
+                --from) from=\"$2\"; [ -n \"$from\" ] || { echo \"$usage\" >&2; exit 1; }; shift 2 ;; \
+                --from=*) from=\"${1#--from=}\"; [ -n \"$from\" ] || { echo \"$usage\" >&2; exit 1; }; shift ;; \
+                *) [ -z \"$branch\" ] || { echo \"$usage\" >&2; exit 1; }; branch=\"$1\"; shift ;; \
+            esac; \
+        done && \
+        if [ -z \"$branch\" ]; then echo \"$usage\" >&2; exit 1; fi && \
         dir=\"${branch##*/}\" && \
         dir=$(printf '%.32s' \"$dir\") && \
         target=\"$parent/../worktrees/$repo/$dir\" && \
+        exists=false && \
+        if git show-ref --verify --quiet \"refs/heads/$branch\" || \
+           git show-ref --verify --quiet \"refs/remotes/origin/$branch\"; then exists=true; fi && \
+        if [ -n \"$from\" ]; then \
+            if $exists; then echo \"Error: branch $branch already exists; --from only applies to new branches\" >&2; exit 1; fi && \
+            git rev-parse --verify --quiet \"$from^{commit}\" >/dev/null || \
+                { echo \"Error: --from ref $from not found\" >&2; exit 1; }; \
+        fi && \
         if [ -d \"$target\" ]; then echo \"$target\"; exit 0; fi && \
         mkdir -p \"$(dirname \"$target\")\" && \
-        if git show-ref --verify --quiet \"refs/heads/$branch\" || \
-           git show-ref --verify --quiet \"refs/remotes/origin/$branch\"; then \
+        if $exists; then \
             git worktree add \"$target\" \"$branch\" >&2; \
         else \
-            git worktree add -b \"$branch\" \"$target\" >&2 && \
+            git worktree add -b \"$branch\" \"$target\" ${from:+\"$from\"} >&2 && \
             git config \"branch.$branch.remote\" origin && \
             git config \"branch.$branch.merge\" \"refs/heads/$branch\"; \
         fi && \

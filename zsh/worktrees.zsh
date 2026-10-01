@@ -1,6 +1,7 @@
 # Worktree helpers for the ~/repos/<repo> + ~/worktrees/<repo>/<branch> layout.
 #   gr     cd to the main repo root from anywhere in a repo or worktree
-#   gwt    create/switch worktrees (numbered picker with no args)
+#   gwt    create/switch worktrees (numbered picker with no args); --from <ref> starts
+#          a new branch at <ref> instead of the current HEAD
 #   gwtpr  create a worktree for a GitHub PR
 #   hwt, hwtpr  like gwt/gwtpr, but open the worktree as a new Herdr workspace and leave
 #          the calling shell where it was
@@ -197,6 +198,7 @@ _wt_herdr_close() {
 }
 
 # git worktree wrapper - creates worktree + branch if needed, then cd's into it
+# (args, including --from <ref>, are passed through to `git wt`)
 # with no args: cd to worktree root (if in a worktree) or prompt for a worktree name
 gwt() {
   if [[ $# -eq 0 ]]; then
@@ -236,13 +238,22 @@ gwt() {
 }
 hwt() { _wt_herdr_run gwt "$@" }
 _gwt() {
+  if [[ "${words[CURRENT-1]}" == --from ]]; then
+    # symref entries (origin/HEAD, shortened to just "origin") aren't useful starting points
+    compadd -- ${(f)"$(git for-each-ref --format='%(if)%(symref)%(then)%(else)%(refname:short)%(end)' refs/heads refs/remotes 2>/dev/null)"}
+    return
+  fi
+  [[ "${words[CURRENT]}" == -* ]] && compadd -- --from
+  _wt_names
+}
+_wt_names() {
   local root repo parent wt_dir
   root=$(git rev-parse --show-toplevel 2>/dev/null) || return
   repo=$(basename "$root")
   parent=$(dirname "$root")
   wt_dir="${parent}/../worktrees/${repo}"
   if [[ -d "$wt_dir" ]]; then
-    compadd -- "$wt_dir"/*(/:t)
+    compadd -- "$wt_dir"/*(N/:t)
   fi
 }
 
@@ -491,7 +502,7 @@ rmwt() {
   _wt_purge "$trash"
   echo "Removed worktree $target"
 }
-_rmwt() { _gwt }
+_rmwt() { _wt_names }
 
 compdef _gwt gwt
 compdef _gwtpr gwtpr
