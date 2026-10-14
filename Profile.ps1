@@ -74,6 +74,10 @@ if ($null -ne $env:ANDROID_HOME) {
     Register-PathElement -PathEnvironmentVariable 'PATH' $PlatformToolsDirectory
 }
 
+if (Test-Command 'fnm') {
+    fnm env --use-on-cd --shell powershell | Out-String | Invoke-Expression
+}
+
 function global:cdr { cd $ReposDirectory }
 function global:cdacn { cd (Join-Path $ReposDirectory 'axe-core-nuget') }
 function global:cda { cd (Join-Path $ReposDirectory 'accessibility-insights-action') }
